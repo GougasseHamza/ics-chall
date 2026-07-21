@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RIVERMARK // Line 4 SCADA</title>
+  <style>
+    :root {
+      --bg: #071014;
+      --panel: #0d1b20;
+      --panel2: #10252b;
+      --line: #25424a;
+      --text: #d7e8e8;
+      --muted: #789398;
+      --cyan: #48d7d2;
+      --green: #72e59a;
+      --amber: #ffc857;
+      --red: #ff5d6c;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at 20% 0, #102b32 0, var(--bg) 38%); color: var(--text); font: 14px/1.45 Inter, ui-monospace, SFMono-Regular, Menlo, monospace; min-height: 100vh; }
+    header { min-height: 72px; padding: 14px 26px; border-bottom: 1px solid var(--line); background: rgba(4, 13, 16, .88); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; backdrop-filter: blur(12px); }
+    h1 { font-size: 18px; letter-spacing: .16em; margin: 0; }
+    .sub { color: var(--muted); font-size: 11px; margin-top: 4px; letter-spacing: .08em; }
+    .status-pill { border: 1px solid var(--line); padding: 9px 14px; border-radius: 4px; font-weight: 800; letter-spacing: .08em; }
+    main { max-width: 1500px; margin: 0 auto; padding: 20px; }
+    .grid { display: grid; grid-template-columns: 1.55fr .75fr; gap: 16px; }
+    .panel { background: linear-gradient(145deg, rgba(18, 42, 48, .95), rgba(9, 25, 30, .97)); border: 1px solid var(--line); border-radius: 7px; box-shadow: 0 16px 45px rgba(0,0,0,.22); }
+    .panel-title { padding: 12px 15px; border-bottom: 1px solid var(--line); color: var(--cyan); letter-spacing: .12em; font-size: 12px; display: flex; justify-content: space-between; }
+    .process { min-height: 480px; padding: 28px; position: relative; overflow: hidden; }
+    .process-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(72,215,210,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(72,215,210,.035) 1px, transparent 1px); background-size: 25px 25px; pointer-events: none; }
+    .equipment { display: grid; grid-template-columns: 1fr 180px 1fr; align-items: center; gap: 25px; height: 360px; position: relative; z-index: 1; }
+    .tank-wrap { text-align: center; }
+    .tank { width: 190px; height: 270px; border: 4px solid #8eabb0; border-top: 12px solid #8eabb0; border-radius: 8px 8px 22px 22px; margin: 0 auto 12px; position: relative; overflow: hidden; background: #071114; box-shadow: inset 0 0 25px rgba(0,0,0,.75); }
+    .tank::before { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px; background: rgba(255,255,255,.16); z-index: 2; }
+    .liquid { position: absolute; left: 0; right: 0; bottom: 0; height: 68%; background: linear-gradient(180deg, #35c8df, #146c99); transition: height .6s ease; box-shadow: 0 -5px 18px rgba(53,200,223,.45); }
+    .liquid::after { content: ''; position: absolute; top: -3px; left: 0; right: 0; height: 6px; background: rgba(185,247,255,.7); }
+    .tank-reading { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; font-size: 28px; font-weight: 900; text-shadow: 0 2px 10px #000; }
+    .pipe { height: 12px; background: #809ba0; position: relative; box-shadow: inset 0 -3px 0 #40565a; }
+    .flowing::after { content: ''; position: absolute; inset: 3px 0; background: repeating-linear-gradient(90deg, var(--cyan) 0 18px, transparent 18px 34px); animation: flow .65s linear infinite; }
+    @keyframes flow { to { background-position: 34px 0; } }
+    .pump { width: 100px; height: 100px; border: 7px solid #8eabb0; border-radius: 50%; margin: -44px auto 10px; background: #102329; position: relative; z-index: 2; display: grid; place-items: center; }
+    .pump svg { width: 63px; fill: #6f8f94; }
+    .pump.running svg { fill: var(--cyan); animation: spin 1s linear infinite; transform-origin: center; }
+    .pump.broken { border-color: var(--red); box-shadow: 0 0 22px rgba(255,93,108,.4); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .conveyor { height: 95px; border: 3px solid #718a8f; border-radius: 6px; position: relative; background: repeating-linear-gradient(90deg, #162b30 0 38px, #203b42 38px 42px); overflow: hidden; }
+    .conveyor.running { animation: belt .7s linear infinite; }
+    @keyframes belt { to { background-position: 42px 0; } }
+    .bottle { position: absolute; left: 15px; bottom: 22px; width: 33px; height: 58px; border: 3px solid #9fc3c6; border-radius: 5px 5px 9px 9px; transition: left .6s linear; overflow: hidden; }
+    .bottle::before { content: ''; position: absolute; width: 15px; height: 8px; border: 3px solid #9fc3c6; border-bottom: 0; left: 6px; top: -10px; }
+    .bottle-fill { position: absolute; bottom: 0; width: 100%; height: 0; background: #36c8de; transition: height .5s; }
+    .tag { font-size: 12px; color: var(--muted); }
+    .tag strong { color: var(--text); }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+    .card { padding: 12px; border: 1px solid var(--line); background: rgba(3,12,15,.55); border-radius: 4px; }
+    .card .label { color: var(--muted); font-size: 10px; letter-spacing: .08em; }
+    .card .value { font-size: 19px; font-weight: 800; margin-top: 4px; }
+    .side { display: grid; gap: 16px; align-content: start; }
+    .controls { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button { border: 1px solid #357076; background: #15343a; color: var(--text); padding: 11px; border-radius: 4px; font: inherit; font-weight: 800; cursor: pointer; }
+    button:hover { background: #1d4a51; }
+    button.stop { border-color: #7a4249; background: #412126; }
+    .lock { grid-column: 1/-1; padding: 10px; border: 1px dashed #6d5d36; color: var(--amber); font-size: 11px; }
+    .alarms { max-height: 280px; overflow: auto; }
+    .event { padding: 10px 13px; border-bottom: 1px solid rgba(37,66,74,.6); }
+    .event-time { color: var(--muted); font-size: 10px; }
+    .event.WARNING { border-left: 3px solid var(--amber); }
+    .event.CRITICAL { border-left: 3px solid var(--red); color: #ffd9dd; }
+    .event.INFO { border-left: 3px solid var(--green); }
+    .bar { height: 7px; margin-top: 7px; background: #071114; border-radius: 5px; overflow: hidden; }
+    .bar > i { display: block; height: 100%; background: var(--green); transition: width .5s; }
+    .bar > i.warn { background: var(--amber); }
+    .bar > i.danger { background: var(--red); }
+    .plcs { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 14px; }
+    .plc { padding: 10px; background: #081519; border: 1px solid var(--line); }
+    .asset-meta { margin: 5px 0 0 15px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .asset-meta code { color: var(--cyan); }
+    .led { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .offline { --green: var(--red); }
+    footer { color: var(--muted); text-align: center; padding: 22px; font-size: 10px; }
+    @media (max-width: 950px) { .grid { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; } .equipment { grid-template-columns: 1fr; height: auto; } .process { min-height: 900px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>RIVERMARK BEVERAGE CO. // LINE 4</h1><div class="sub">BOTTLING CELL SUPERVISORY CONTROL · OT-NET-04</div></div>
+    <div id="machine-state" class="status-pill">CONNECTING</div>
+  </header>
+  <main>
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-title"><span>PROCESS OVERVIEW</span><span id="updated">--</span></div>
+        <div class="process">
+          <div class="process-grid"></div>
+          <div class="equipment">
+            <div class="tank-wrap">
+              <div class="tag"><strong>TK-101</strong> BUFFER TANK</div>
+              <div class="tank"><div id="liquid" class="liquid"></div><div id="tank-level" class="tank-reading">--%</div></div>
+              <div class="tag">XV-101 INLET · <strong id="inlet-status">--</strong> · <span id="inlet-mode">--</span></div>
+            </div>
+            <div>
+              <div id="pipe" class="pipe"></div>
+              <div id="pump" class="pump"><svg viewBox="0 0 100 100"><path d="M50 7c12 13 16 25 12 36 11-5 21-3 31 4-4 17-14 27-28 29 4 8 1 14-7 18-14-7-21-18-20-32-8 5-18 5-30 0 2-17 10-29 24-34-2-8 4-15 18-21zm0 34a12 12 0 100 24 12 12 0 000-24z"/></svg></div>
+              <div class="tag" style="text-align:center"><strong>P-101</strong> TRANSFER PUMP<br><span id="pump-mode">--</span></div>
+            </div>
+            <div>
+              <div class="tag"><strong>CV-201</strong> INDEX CONVEYOR · <span id="conveyor-mode">--</span></div>
+              <div id="conveyor" class="conveyor"><div id="bottle" class="bottle"><div id="bottle-fill" class="bottle-fill"></div></div></div>
+              <div class="tag" style="margin-top:9px">GOOD: <strong id="good-count">0</strong> · REJECT: <strong id="reject-count">0</strong></div>
+            </div>
+          </div>
+          <div class="cards">
+            <div class="card"><div class="label">PUMP TEMPERATURE</div><div id="temperature" class="value">-- °C</div><div class="bar"><i id="temp-bar"></i></div></div>
+            <div class="card"><div class="label">VIBRATION RMS</div><div id="vibration" class="value">-- mm/s</div><div class="bar"><i id="vib-bar"></i></div></div>
+            <div class="card"><div class="label">DRY-RUN TIMER</div><div id="dry-time" class="value">-- s</div><div class="bar"><i id="dry-bar"></i></div></div>
+            <div class="card"><div class="label">PUMP DAMAGE</div><div id="damage" class="value">-- %</div><div class="bar"><i id="damage-bar"></i></div></div>
+          </div>
+        </div>
+      </section>
+      <aside class="side">
+        <section class="panel">
+          <div class="panel-title">OPERATOR CONTROLS</div>
+          <div class="controls">
+            <button onclick="control('automatic')">RUN AUTOMATIC</button>
+            <button class="stop" onclick="control('safe_stop')">SAFE STOP</button>
+            <div class="lock">🔒 Maintenance manual overrides require the local panel key. Remote HMI commands are safety-limited.</div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-title"><span>ASSET & TAG DIAGNOSTICS</span><span>LIVE</span></div>
+          <div class="plcs">
+            <div class="plc"><span class="led"></span><strong>PLC-101</strong><div class="asset-meta"><code>172.30.10.11:502</code> · MODBUS/TCP<br>TANK / TRANSFER PUMP CONTROLLER</div></div>
+            <div class="plc"><span class="led"></span><strong>PLC-102</strong><div class="asset-meta"><code>172.30.10.12:502</code> · MODBUS/TCP<br>BOTTLE CONVEYOR CONTROLLER</div></div>
+            <div class="plc"><span class="led"></span><strong>RIO-101 / LT-101</strong><div class="asset-meta"><code>172.30.10.13:502</code> · MODBUS/TCP<br>LEVEL: INPUT <code>30001</code> · SCALE <code>0.01%</code><br>REPORTED RAW: <code id="lt-raw">--</code></div></div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-title"><span>ALARM & EVENT JOURNAL</span><span>LIVE</span></div>
+          <div id="events" class="alarms"><div class="event INFO">Waiting for controller data…</div></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <footer>AUTHORIZED LINE 4 OPERATIONS ONLY · UNAUTHORIZED CHANGES ARE LOGGED · BUILD 4.7.13-LTS</footer>
+  <script>
+    const $ = id => document.getElementById(id);
+    function setBar(id, value, max, amber=65, red=85) {
+      const pct = Math.max(0, Math.min(100, value / max * 100)); const el = $(id); el.style.width = pct + '%';
+      el.className = pct >= red ? 'danger' : pct >= amber ? 'warn' : '';
+    }
+    function paint(data) {
+      const t=data.tank, p=data.pump, l=data.line;
+      $('machine-state').textContent=data.machine_state; $('machine-state').style.borderColor = data.machine_state==='BROKEN'?'var(--red)':data.machine_state==='WARNING'?'var(--amber)':'var(--green)';
+      $('updated').textContent=(data.updated_at||'').replace('T',' ').replace('+00:00','Z');
+      $('liquid').style.height=Math.max(0,Math.min(100,t.level))+'%'; $('tank-level').textContent=t.level.toFixed(1)+'%';
+      $('lt-raw').textContent=String(Math.round(t.level*100));
+      $('inlet-status').textContent=t.inlet_open?'OPEN':'CLOSED'; $('inlet-mode').textContent=t.inlet_mode;
+      $('pump-mode').textContent=p.mode; $('pump').className='pump'+(p.running?' running':'')+(data.machine_state==='BROKEN'?' broken':''); $('pipe').className='pipe'+(p.running?' flowing':'');
+      $('conveyor-mode').textContent=l.conveyor_mode; $('conveyor').className='conveyor'+(l.conveyor_running?' running':'');
+      $('bottle').style.left=(15+Math.min(100,l.bottle_position)*2.15)+'px'; $('bottle-fill').style.height=Math.min(100,l.bottle_level)+'%';
+      $('good-count').textContent=l.good_bottles; $('reject-count').textContent=l.rejected_bottles;
+      $('temperature').textContent=p.temperature.toFixed(1)+' °C'; $('vibration').textContent=p.vibration.toFixed(1)+' mm/s'; $('dry-time').textContent=p.dry_run_seconds.toFixed(1)+' s'; $('damage').textContent=p.damage.toFixed(1)+' %';
+      setBar('temp-bar',p.temperature,140,55,80); setBar('vib-bar',p.vibration,25,30,55); setBar('dry-bar',p.dry_run_seconds,18,20,45); setBar('damage-bar',p.damage,100,30,65);
+      $('events').innerHTML=(data.events||[]).map(e=>`<div class="event ${e.severity}"><div class="event-time">${e.time} · ${e.severity}</div>${e.message}</div>`).join('') || '<div class="event INFO">No events</div>';
+    }
+    async function refresh(){ try{const r=await fetch('/api/status',{cache:'no-store'}); if(!r.ok)throw Error(); paint(await r.json());}catch(e){$('machine-state').textContent='SCADA OFFLINE';$('machine-state').style.borderColor='var(--red)';} }
+    async function control(action){ const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})}); if(!r.ok)alert('PLC command failed'); setTimeout(refresh,300); }
+    refresh(); setInterval(refresh,1000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+"""Authoritative physical-process simulation."""
+

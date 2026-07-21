@@ -1,0 +1,218 @@
+name: last-bottle
+
+x-core-service: &core-service
+  image: last-bottle-core:${IMAGE_TAG:-local}
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:size=16m,mode=1777
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  environment:
+    PLANT_API_TOKEN: ${PLANT_API_TOKEN:?set PLANT_API_TOKEN in .env}
+
+services:
+  core-image:
+    image: last-bottle-core:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: services/common/Dockerfile
+    profiles: ["build"]
+    command: ["true"]
+
+  plant:
+    <<: *core-service
+    command: ["python", "-m", "services.plant.app"]
+    hostname: plant
+    networks:
+      field_net:
+        ipv4_address: 172.30.20.10
+    mem_limit: 96m
+    cpus: 0.35
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  rio:
+    <<: *core-service
+    command: ["python", "-m", "services.rio.app"]
+    hostname: rio-101
+    depends_on:
+      plant:
+        condition: service_healthy
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      control_net:
+        ipv4_address: 172.30.10.13
+      field_net:
+        ipv4_address: 172.30.20.13
+    expose:
+      - "502"
+    mem_limit: 96m
+    cpus: 0.30
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',502),2); s.close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  plc1:
+    <<: *core-service
+    command: ["python", "-m", "services.plc1.app"]
+    hostname: plc-101
+    depends_on:
+      plant:
+        condition: service_healthy
+      rio:
+        condition: service_healthy
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      control_net:
+        ipv4_address: 172.30.10.11
+      field_net:
+        ipv4_address: 172.30.20.11
+    expose:
+      - "502"
+    mem_limit: 96m
+    cpus: 0.35
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',502),2); s.close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  plc2:
+    <<: *core-service
+    command: ["python", "-m", "services.plc2.app"]
+    hostname: plc-102
+    depends_on:
+      plant:
+        condition: service_healthy
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      control_net:
+        ipv4_address: 172.30.10.12
+      field_net:
+        ipv4_address: 172.30.20.12
+    expose:
+      - "502"
+    mem_limit: 96m
+    cpus: 0.35
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',502),2); s.close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  scada:
+    <<: *core-service
+    command: ["python", "-m", "services.scada.app"]
+    hostname: hmi-04
+    depends_on:
+      plc1:
+        condition: service_healthy
+      plc2:
+        condition: service_healthy
+    networks:
+      edge_net:
+        ipv4_address: 172.30.30.10
+      control_net:
+        ipv4_address: 172.30.10.20
+    ports:
+      - "${SCADA_PORT:-8089}:8080"
+    mem_limit: 128m
+    cpus: 0.50
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  checker:
+    <<: *core-service
+    command: ["python", "-m", "services.checker.app"]
+    hostname: incident-validator
+    depends_on:
+      plant:
+        condition: service_healthy
+    environment:
+      PLANT_API_TOKEN: ${PLANT_API_TOKEN:?set PLANT_API_TOKEN in .env}
+      FLAG_SECRET: ${FLAG_SECRET:?set FLAG_SECRET in .env}
+      INSTANCE_ID: ${INSTANCE_ID:-last-bottle-01}
+      FLAG_PREFIX: ${FLAG_PREFIX:-flag}
+    networks:
+      edge_net:
+        ipv4_address: 172.30.30.30
+      field_net:
+        ipv4_address: 172.30.20.40
+    ports:
+      - "${CHECKER_PORT:-8090}:8080"
+    mem_limit: 96m
+    cpus: 0.30
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  player:
+    image: last-bottle-player:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: services/attacker/Dockerfile
+      args:
+        PLAYER_PASSWORD: ${PLAYER_PASSWORD:-line4-maint}
+    init: true
+    restart: unless-stopped
+    hostname: mws-ir
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      edge_net:
+        ipv4_address: 172.30.30.20
+      control_net:
+        ipv4_address: 172.30.10.50
+    ports:
+      - "${PLAYER_SSH_PORT:-2224}:22"
+    mem_limit: 192m
+    cpus: 0.60
+    pids_limit: 128
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "22"]
+      interval: 10s
+      timeout: 4s
+      retries: 8
+      start_period: 5s
+
+networks:
+  edge_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.30.0/24
+  control_net:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.10.0/24
+  field_net:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.20.0/24

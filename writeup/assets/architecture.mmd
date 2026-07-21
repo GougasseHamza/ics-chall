@@ -1,0 +1,20 @@
+flowchart LR
+    Player["Player laptop"] -->|"SSH port 2224"| Jump["Maintenance workstation"]
+    Player -->|"HTTP port 8089"| HMI["SCADA / HMI"]
+    Player -->|"HTTP port 8090"| Checker["Incident validator"]
+
+    subgraph Control["control_net - isolated"]
+        Jump -->|"Modbus TCP"| PLC1["PLC-101<br/>Tank and pump"]
+        Jump -->|"Modbus TCP"| PLC2["PLC-102<br/>Conveyor"]
+        Jump -->|"Unauthorized Modbus write"| RIO["RIO-101<br/>Level gateway"]
+        HMI -->|"Modbus polling"| PLC1
+        HMI -->|"Modbus polling"| PLC2
+        RIO -->|"Reported LT-101 level"| PLC1
+    end
+
+    subgraph Field["field_net - isolated"]
+        Plant["Authoritative physical process"] -->|"Actual tank level"| RIO
+        PLC1 -->|"Authenticated simulation API"| Plant
+        PLC2 -->|"Authenticated simulation API"| Plant
+        Plant -->|"Authoritative state"| Checker
+    end

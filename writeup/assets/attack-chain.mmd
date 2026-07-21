@@ -1,0 +1,8 @@
+flowchart TD
+    A["Player workstation"] -->|"Unauthenticated Modbus FC06 write"| R["RIO-101 calibration bias"]
+    R --> V["False-high LT-101 level"]
+    V --> P["PLC-101 trusts reported level"]
+    P --> C["Inlet closes and pump remains enabled"]
+    C --> E["Physical tank empties"]
+    E --> D["Pump dry-runs and reaches 100 percent damage"]
+    D --> F["Checker releases flag"]
