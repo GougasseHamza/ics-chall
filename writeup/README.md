@@ -103,6 +103,13 @@ The result gives us three Modbus endpoints and one web interface:
 The HMI is useful for visual context, but it is not required to solve the
 challenge. We can stay entirely at the protocol layer.
 
+The screen is a live process mimic rather than a static diagram. Its tank and
+active-bottle levels follow the PLC input registers. P-101 rotates while the
+pump-running tag is active, and the CV-101 belt and drive move while the
+conveyor-running tag is active. When either PLC output stops, the corresponding
+animation stops too. This gives us a visual check that our protocol actions are
+changing the simulated process.
+
 <details>
 <summary>Why was the first full-subnet scan so slow?</summary>
 
@@ -273,6 +280,8 @@ red and the `flag{...}` proof value appears directly in the red banner.
 
 This is not a browser-side calculation. FUXA polls a read-only checker tag;
 the checker returns a null proof before the process reaches the terminal state.
+The pump animation also stops at this point because PLC-101 reports that the
+seized pump is no longer running.
 
 ## Verifying through the checker API
 

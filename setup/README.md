@@ -23,6 +23,8 @@ records sustained dry running and terminal mechanical damage.
 
 Discovery comes from the live system rather than hidden answer files. FUXA
 polls PLC-101 and PLC-102 over Modbus/TCP and displays their live process tags.
+Its pump, conveyor and bottle-fill animations are driven by those PLC tags, so
+the mimic starts and stops with the simulated equipment.
 Modbus device identification describes each endpoint, and deliberately bounded
 register maps let players test a small number of meaningful addresses while
 receiving normal Modbus exceptions for invalid probes. The HMI never connects

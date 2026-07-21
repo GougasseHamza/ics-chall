@@ -13,6 +13,12 @@ RIO-101, hold the plant API token, or contain the flag secret. A separate
 read-only WebAPI device polls the incident validator, whose proof field remains
 null until terminal simulated damage is confirmed.
 
+The mimic animations are driven by PLC tags. P-101 rotates only while PLC-101
+reports the pump running, the CV-101 belt moves only while PLC-102 reports the
+conveyor running, and the active-bottle gauge fills from PLC-102's bottle-level
+input. These are native FUXA actions and gauges rather than independent visual
+timers, so a stopped process produces a stopped display.
+
 The editor is authentication-protected. Every container creation generates a
 new unrecorded administrator password and JWT secret, leaving players with
 guest view access only. The complete FUXA state is held in tmpfs and rebuilt

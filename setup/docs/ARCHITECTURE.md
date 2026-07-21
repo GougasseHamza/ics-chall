@@ -67,6 +67,12 @@ by authentication; its administrator password and JWT secret are replaced by
 fresh random values on every container creation. Players receive guest view
 access only, and guest socket writes are rejected by FUXA.
 
+The process mimic uses native FUXA actions tied to the same PLC tags. The P-101
+impeller rotates only while PLC-101 reports the pump running. The CV-101 belt
+and drive animate only while PLC-102 reports the conveyor running. A progress
+gauge inside the active bottle follows PLC-102's measured bottle level. This
+keeps the visual state causally aligned with the simulated process.
+
 ### Player workstation (`player`)
 
 The only direct entry into `control_net`. It runs an unprivileged `player`

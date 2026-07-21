@@ -13,6 +13,9 @@ project=$(curl --fail --silent --show-error "http://127.0.0.1:${scada_port}/api/
 printf '%s' "$project" | grep -q 'Rivermark Line 4 Operations'
 printf '%s' "$project" | grep -q '"variableId":"validator_flag"'
 printf '%s' "$project" | grep -q '172.30.10.11:502'
+printf '%s' "$project" | grep -q '"id":"PIE_conveyor"'
+printf '%s' "$project" | grep -q '"id":"GXP_bottle_fill"'
+printf '%s' "$project" | grep -q '"type":"clockwise"'
 login_status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
     -H 'Content-Type: application/json' \
     -d '{"username":"admin","password":"123456"}' \
