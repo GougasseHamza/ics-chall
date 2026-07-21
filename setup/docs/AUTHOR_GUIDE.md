@@ -30,12 +30,12 @@ parameter and corrupts the level value consumed by a PLC.
 
 ATT&CK mappings:
 
-- T0801 — Monitor Process State;
-- T0836 — Modify Parameter;
-- T0869 — Standard Application Layer Protocol;
-- T1692.001 — Unauthorized Message: Command Message;
-- T0832 — Manipulation of View;
-- T0879 — Damage to Property, simulated only.
+- T0801: Monitor Process State;
+- T0836: Modify Parameter;
+- T0869: Standard Application Layer Protocol;
+- T1692.001: Unauthorized Message: Command Message;
+- T0832: Manipulation of View;
+- T0879: Damage to Property, simulated only.
 
 References:
 

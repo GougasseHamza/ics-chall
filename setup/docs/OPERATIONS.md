@@ -61,7 +61,7 @@ initial values.
 The test verifies device identification, bounded invalid-address behavior and
 a small observable calibration change from the unprivileged player container.
 It then writes the false LT-101 bias and waits for the checker to emit a flag.
-It normally takes 70–90 seconds including recreation and health checks.
+It normally takes 70 to 90 seconds including recreation and health checks.
 
 ## Updating code
 

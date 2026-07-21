@@ -14,7 +14,6 @@
   </style>
 </head>
 <body><main><h1>LINE 4 // INCIDENT VALIDATION</h1><p>This service validates physical process impact. Network access or a transient alarm alone is insufficient.</p>
-  <div class="grid"><div class="card"><div class="label">MACHINE STATE</div><div id="state" class="value">--</div></div><div class="card"><div class="label">PUMP DAMAGE</div><div id="damage" class="value">--</div></div><div class="card"><div class="label">DRY RUN</div><div id="dry" class="value">--</div></div></div>
+  <div class="grid"><div class="card"><div class="label">MACHINE STATE</div><div id="state" class="value">N/A</div></div><div class="card"><div class="label">PUMP DAMAGE</div><div id="damage" class="value">N/A</div></div><div class="card"><div class="label">DRY RUN</div><div id="dry" class="value">N/A</div></div></div>
   <div id="result" class="flag pending">No qualifying equipment failure has been recorded.</div><p><button onclick="check()">RECHECK STATE</button></p>
 </main><script>async function check(){const d=await(await fetch('/api/claim',{cache:'no-store'})).json();state.textContent=d.machine_state;damage.textContent=d.pump_damage.toFixed(1)+'%';dry.textContent=d.dry_run_seconds.toFixed(1)+' s';result.textContent=d.solved?d.flag:'No qualifying equipment failure has been recorded.';result.className=d.solved?'flag':'flag pending'}check();setInterval(check,2500)</script></body></html>
-
