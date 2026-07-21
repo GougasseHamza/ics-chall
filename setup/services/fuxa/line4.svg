@@ -1,0 +1,109 @@
+<svg width="1440" height="900" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tankShell" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dbe5ef"/><stop offset="0.5" stop-color="#f8fafc"/><stop offset="1" stop-color="#b8c7d6"/></linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.18"/></filter>
+  </defs>
+
+  <rect width="1440" height="900" fill="#e8eef5"/>
+  <rect width="1440" height="66" fill="#17263b"/>
+  <rect y="66" width="1440" height="8" fill="#1e9aae"/>
+  <text x="34" y="31" fill="#f8fafc" font-family="sans-serif" font-size="22" font-weight="700">RIVERMARK BEVERAGE CO.</text>
+  <text x="34" y="53" fill="#9fb3c8" font-family="sans-serif" font-size="12" letter-spacing="2">LINE 4 BOTTLING CELL   PROCESS OVERVIEW</text>
+  <text x="1405" y="38" fill="#a7f3d0" font-family="sans-serif" font-size="13" text-anchor="end">FUXA SCADA   LIVE</text>
+
+  <rect x="28" y="96" width="1384" height="590" rx="8" fill="#f8fafc" stroke="#bac8d8" filter="url(#shadow)"/>
+  <text x="56" y="128" fill="#475569" font-family="sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">PROCESS MIMIC</text>
+
+  <line x1="75" y1="482" x2="1295" y2="482" stroke="#64748b" stroke-width="18"/>
+  <line x1="75" y1="482" x2="1295" y2="482" stroke="#3b82f6" stroke-width="7" stroke-dasharray="28 13"/>
+  <polygon points="1295,466 1328,482 1295,498" fill="#3b82f6"/>
+
+  <text x="90" y="180" fill="#334155" font-family="sans-serif" font-size="15" font-weight="700">RAW PRODUCT INLET</text>
+  <line x1="160" y1="198" x2="160" y2="270" stroke="#64748b" stroke-width="18"/>
+  <line x1="160" y1="198" x2="160" y2="270" stroke="#3b82f6" stroke-width="7" stroke-dasharray="19 9"/>
+  <g id="GSE_inlet" type="svg-ext-gauge_semaphore" stroke="#0f172a" font-family="sans-serif">
+    <ellipse cx="160" cy="230" rx="14" ry="14" fill="#64748b" stroke-width="3" id="lamp_inlet"/>
+  </g>
+  <text x="182" y="235" fill="#475569" font-family="sans-serif" font-size="12">XV-101</text>
+
+  <rect x="112" y="270" width="260" height="212" rx="8" fill="url(#tankShell)" stroke="#52677d" stroke-width="4"/>
+  <path d="M112 296 Q242 268 372 296" fill="none" stroke="#71869a" stroke-width="3"/>
+  <g id="GXP_tank" type="svg-ext-gauge_progress" font-size="14" font-family="sans-serif" stroke="#52677d">
+    <rect x="129" y="294" width="226" height="168" fill="#dce5ee" id="tank_empty"/>
+    <rect x="129" y="378" width="226" height="84" fill="#3b82f6" id="tank_fill"/>
+    <foreignObject x="129" y="294" width="226" height="168" id="tank_progress"/>
+  </g>
+  <text x="242" y="326" fill="#213247" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">TK-101</text>
+  <text x="242" y="350" fill="#64748b" font-family="sans-serif" font-size="12" text-anchor="middle">SURGE TANK</text>
+  <g id="VAL_tank" type="svg-ext-value" fill="#0f172a" font-size="30" font-family="sans-serif" text-anchor="middle">
+    <text x="242" y="419" fill="#ffffff" stroke="#1e3a5f" stroke-width="1" font-weight="700">##.##</text>
+  </g>
+  <text x="242" y="447" fill="#dbeafe" font-family="sans-serif" font-size="11" text-anchor="middle">LT-101 REPORTED LEVEL</text>
+
+  <line x1="372" y1="482" x2="478" y2="482" stroke="#64748b" stroke-width="18"/>
+  <line x1="372" y1="482" x2="478" y2="482" stroke="#3b82f6" stroke-width="7" stroke-dasharray="22 10"/>
+  <g id="MTR_pump" type="svg-ext-motor" fill="#64748b" stroke="#203247" stroke-width="4" font-family="sans-serif">
+    <ellipse cx="525" cy="482" rx="48" ry="48" id="pump_body"/>
+    <path d="M507 450 L551 482 L507 514 Z" fill="#f8fafc" stroke="none" id="pump_impeller"/>
+  </g>
+  <rect x="493" y="530" width="64" height="14" fill="url(#steel)" stroke="#52677d"/>
+  <text x="525" y="566" fill="#24364b" font-family="sans-serif" font-size="16" font-weight="700" text-anchor="middle">P-101</text>
+  <text x="525" y="586" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="middle">TRANSFER PUMP</text>
+
+  <rect x="640" y="270" width="200" height="212" rx="8" fill="url(#steel)" stroke="#52677d" stroke-width="4"/>
+  <path d="M640 304 Q740 280 840 304" fill="none" stroke="#71869a" stroke-width="3"/>
+  <rect x="661" y="330" width="158" height="132" fill="#60a5fa" opacity="0.72"/>
+  <text x="740" y="318" fill="#213247" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">FL-101</text>
+  <text x="740" y="404" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="700" text-anchor="middle">FILLER</text>
+  <g id="VAL_bottle" type="svg-ext-value" fill="#ffffff" font-size="25" font-family="sans-serif" text-anchor="middle">
+    <text x="740" y="437" fill="#ffffff" font-weight="700">##.##</text>
+  </g>
+
+  <line x1="840" y1="482" x2="970" y2="482" stroke="#64748b" stroke-width="18"/>
+  <line x1="840" y1="482" x2="970" y2="482" stroke="#3b82f6" stroke-width="7" stroke-dasharray="22 10"/>
+  <rect x="970" y="432" width="336" height="100" rx="8" fill="#d5dee8" stroke="#52677d" stroke-width="3"/>
+  <line x1="992" y1="505" x2="1285" y2="505" stroke="#334155" stroke-width="6"/>
+  <circle cx="1015" cy="505" r="17" fill="#94a3b8" stroke="#475569"/>
+  <circle cx="1075" cy="505" r="17" fill="#94a3b8" stroke="#475569"/>
+  <circle cx="1135" cy="505" r="17" fill="#94a3b8" stroke="#475569"/>
+  <circle cx="1195" cy="505" r="17" fill="#94a3b8" stroke="#475569"/>
+  <circle cx="1255" cy="505" r="17" fill="#94a3b8" stroke="#475569"/>
+  <path d="M1090 445 h26 v50 h-26 z M1095 433 h16 v12 h-16 z" fill="#60a5fa" stroke="#334155" stroke-width="2"/>
+  <path d="M1162 445 h26 v50 h-26 z M1167 433 h16 v12 h-16 z" fill="#60a5fa" stroke="#334155" stroke-width="2"/>
+  <g id="MTR_conveyor" type="svg-ext-motor" fill="#64748b" stroke="#203247" stroke-width="3" font-family="sans-serif">
+    <ellipse cx="1282" cy="555" rx="29" ry="29" id="conveyor_motor"/>
+    <path d="M1271 536 L1297 555 L1271 574 Z" fill="#f8fafc" stroke="none" id="conveyor_arrow"/>
+  </g>
+  <text x="1138" y="566" fill="#24364b" font-family="sans-serif" font-size="16" font-weight="700" text-anchor="middle">CV-101 PACKOUT CONVEYOR</text>
+
+  <rect x="906" y="154" width="456" height="222" rx="7" fill="#17263b" stroke="#334a63" filter="url(#shadow)"/>
+  <text x="932" y="184" fill="#67e8f9" font-family="sans-serif" font-size="13" font-weight="700" letter-spacing="1.3">P-101 CONDITION MONITORING</text>
+  <line x1="930" y1="198" x2="1338" y2="198" stroke="#334a63"/>
+  <text x="932" y="232" fill="#9fb3c8" font-family="sans-serif" font-size="12">TEMPERATURE</text>
+  <g id="VAL_temp" type="svg-ext-value" fill="#f8fafc" font-size="20" font-family="sans-serif" text-anchor="end"><text x="1100" y="234" fill="#f8fafc">##.##</text></g>
+  <text x="1160" y="232" fill="#9fb3c8" font-family="sans-serif" font-size="12">VIBRATION</text>
+  <g id="VAL_vibration" type="svg-ext-value" fill="#f8fafc" font-size="20" font-family="sans-serif" text-anchor="end"><text x="1335" y="234" fill="#f8fafc">##.##</text></g>
+  <text x="932" y="281" fill="#9fb3c8" font-family="sans-serif" font-size="12">DRY RUN TIMER</text>
+  <g id="VAL_dry" type="svg-ext-value" fill="#f8fafc" font-size="20" font-family="sans-serif" text-anchor="end"><text x="1100" y="283" fill="#f8fafc">##.##</text></g>
+  <text x="1160" y="281" fill="#9fb3c8" font-family="sans-serif" font-size="12">ACCUMULATED DAMAGE</text>
+  <g id="VAL_damage" type="svg-ext-value" fill="#fca5a5" font-size="20" font-family="sans-serif" text-anchor="end"><text x="1335" y="283" fill="#fca5a5">##.##</text></g>
+  <text x="932" y="333" fill="#9fb3c8" font-family="sans-serif" font-size="12">DRY RUN ALARM</text>
+  <g id="GSE_alarm" type="svg-ext-gauge_semaphore" stroke="#0f172a" font-family="sans-serif"><ellipse cx="1074" cy="329" rx="13" ry="13" fill="#10b981" stroke-width="3" id="lamp_alarm"/></g>
+  <text x="1160" y="333" fill="#9fb3c8" font-family="sans-serif" font-size="12">MACHINE STATE</text>
+  <g id="VAL_state" type="svg-ext-value" fill="#f8fafc" font-size="18" font-family="sans-serif" text-anchor="end"><text x="1335" y="335" fill="#f8fafc" font-weight="700">##.##</text></g>
+
+  <rect x="28" y="712" width="1384" height="92" rx="7" fill="#a61f1f" stroke="#7f1d1d" stroke-width="2" filter="url(#shadow)"/>
+  <g id="GSE_solved" type="svg-ext-gauge_semaphore" stroke="#ffffff" font-family="sans-serif"><ellipse cx="70" cy="758" rx="16" ry="16" fill="#f59e0b" stroke-width="3" id="lamp_solved"/></g>
+  <text x="104" y="747" fill="#fecaca" font-family="sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">INCIDENT VALIDATION CHANNEL</text>
+  <text x="104" y="773" fill="#ffffff" font-family="sans-serif" font-size="14">Proof remains blank until the physical-state checker confirms terminal P-101 damage.</text>
+  <g id="VAL_flag" type="svg-ext-value" fill="#ffffff" font-size="22" font-family="monospace" text-anchor="end"><text x="1378" y="765" fill="#ffffff" font-weight="700">##.##</text></g>
+
+  <rect x="28" y="822" width="1384" height="54" rx="5" fill="#dce5ee" stroke="#bac8d8"/>
+  <text x="52" y="844" fill="#64748b" font-family="sans-serif" font-size="10" letter-spacing="1">PRODUCTION COUNTERS</text>
+  <text x="52" y="865" fill="#334155" font-family="sans-serif" font-size="12">GOOD</text>
+  <g id="VAL_good" type="svg-ext-value" fill="#0f172a" font-size="17" font-family="sans-serif" text-anchor="start"><text x="102" y="866" fill="#0f172a">##.##</text></g>
+  <text x="310" y="865" fill="#334155" font-family="sans-serif" font-size="12">REJECTED</text>
+  <g id="VAL_rejected" type="svg-ext-value" fill="#0f172a" font-size="17" font-family="sans-serif" text-anchor="start"><text x="385" y="866" fill="#0f172a">##.##</text></g>
+  <text x="1378" y="855" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">PLC-101 + PLC-102 MODBUS/TCP   500 ms scan</text>
+</svg>

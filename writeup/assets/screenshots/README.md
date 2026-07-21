@@ -4,6 +4,7 @@ These images were captured during a complete manual solve of the isolated
 challenge. Their numeric prefixes preserve the player journey.
 
 They are organizer material and contain infrastructure details, the complete
-solution and an instance-specific flag. Do not distribute this directory while
+solution and instance-specific flags. Do not distribute this directory while
 the corresponding instance is live. Rotate `FLAG_SECRET` and `INSTANCE_ID`
-before publication.
+before publication. Screenshot 16 shows the FUXA process mimic after the
+checker releases its proof tag.

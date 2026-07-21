@@ -2,14 +2,14 @@
 
 `The Last Bottle` is a standalone industrial-control-system CTF challenge. It
 models a beverage bottling cell with two PLCs, a Modbus remote-I/O gateway, a
-web SCADA/HMI, a physical process, an SSH player workstation, and a
+FUXA SCADA/HMI, a physical process, an SSH player workstation, and a
 physical-impact flag checker.
 
 The challenge is inspired by the component separation and bottle-filling
 scenario in [ICSSIM](https://github.com/AlirezaDehlaghi/ICSSIM), but is an
 independent, CTF-focused implementation with hardened container boundaries,
-an original process model and UI, a deterministic solve condition, and
-operations tooling.
+an original process model and FUXA process mimic, a deterministic solve
+condition, and operations tooling.
 
 ## Challenge summary
 
@@ -21,11 +21,12 @@ PLC retains its low-level permissive but makes an unsafe decision from trusted,
 false telemetry. The flag is issued only after the independent physics model
 records sustained dry running and terminal mechanical damage.
 
-Discovery comes from the live system rather than hidden answer files. The HMI
-shows asset and tag-source diagnostics, Modbus device identification describes
-each endpoint, and deliberately bounded register maps let players test a small
-number of meaningful addresses while receiving normal Modbus exceptions for
-invalid probes.
+Discovery comes from the live system rather than hidden answer files. FUXA
+polls PLC-101 and PLC-102 over Modbus/TCP and displays their live process tags.
+Modbus device identification describes each endpoint, and deliberately bounded
+register maps let players test a small number of meaningful addresses while
+receiving normal Modbus exceptions for invalid probes. The HMI never connects
+to vulnerable RIO-101, so it does not reveal the intended write target.
 
 The scenario is inspired by the real FrostyGoop incident behavior documented
 by Dragos and MITRE ATT&CK: reading and writing Modbus holding registers to
@@ -36,7 +37,7 @@ simulation, not a copy of the malware or the affected heating installation.
 
 | Service | Default endpoint | Purpose |
 |---|---|---|
-| SCADA | `http://HOST:8089` | Animated process, telemetry, alarms and safe controls |
+| FUXA SCADA/HMI | `http://HOST:8089` | Live process mimic, telemetry, alarms and flag banner |
 | Checker | `http://HOST:8090` | Physical-impact validation and flag claim |
 | Player SSH | `ssh player@HOST -p 2224` | Isolated workstation on the OT control VLAN |
 
@@ -90,7 +91,7 @@ setup/
 │   ├── plc1/                    # Tank and transfer-pump controller
 │   ├── plc2/                    # Bottle-conveyor controller
 │   ├── rio/                     # Vulnerable LT-101 remote-I/O gateway
-│   └── scada/                   # SCADA/HMI web application
+│   └── fuxa/                    # Pinned FUXA image, project, SVG and secure seeder
 ├── scripts/                     # Deploy, reset, test and isolation checks
 ├── tests/                       # Unit tests for configuration and physics
 └── docs/

@@ -4,7 +4,7 @@
 
 - Linux VPS with Docker Engine and Docker Compose v2
 - 2 CPU cores
-- 2 GB RAM minimum; 4 GB recommended
+- 3 GB RAM minimum; 4 GB recommended
 - Approximately 2 GB free disk during the first image build
 - Host ports 2224, 8089 and 8090 available
 
@@ -60,15 +60,17 @@ initial values.
 
 The test verifies device identification, bounded invalid-address behavior and
 a small observable calibration change from the unprivileged player container.
-It then writes the false LT-101 bias and waits for the checker to emit a flag.
-It normally takes 70 to 90 seconds including recreation and health checks.
+It confirms the FUXA project and live data bindings, writes the false LT-101
+bias, and waits for the checker to emit a flag through the same validator path
+used by the HMI. It normally takes 70 to 90 seconds including recreation and
+health checks.
 
 ## Updating code
 
 ```sh
 cd /opt/last-bottle
 ./scripts/test.sh
-docker compose --profile build build core-image player
+docker compose --profile build build core-image player scada
 docker compose up -d --no-build --force-recreate
 ./scripts/validate-isolation.sh
 ```

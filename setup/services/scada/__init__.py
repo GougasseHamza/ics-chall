@@ -1,2 +1,0 @@
-"""Web SCADA/HMI service."""
-

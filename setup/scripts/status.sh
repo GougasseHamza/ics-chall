@@ -4,8 +4,9 @@ set -eu
 cd "$(dirname "$0")/.."
 docker compose ps
 echo
-curl --fail --silent --show-error "http://127.0.0.1:$(sed -n 's/^SCADA_PORT=//p' .env)/api/status"
+curl --fail --silent --show-error --output /dev/null \
+    --write-out 'FUXA HMI: HTTP %{http_code}\n' \
+    "http://127.0.0.1:$(sed -n 's/^SCADA_PORT=//p' .env)/"
 echo
 curl --fail --silent --show-error "http://127.0.0.1:$(sed -n 's/^CHECKER_PORT=//p' .env)/api/claim"
 echo
-

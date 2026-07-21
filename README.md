@@ -3,7 +3,9 @@
 An intentionally vulnerable industrial-control-system CTF based on a fictional
 beverage bottling line. Players use Modbus/TCP from an isolated maintenance
 workstation to manipulate a remote-I/O calibration register and cause a
-verified simulated pump failure.
+verified simulated pump failure. A pinned FUXA SCADA instance displays the
+live process and releases the proof flag in its incident banner after the
+independent checker validates the damage.
 
 ## Repository structure
 
@@ -43,7 +45,7 @@ The intended player credential is documented in the setup guide. Modbus port
 ## Write-up
 
 The [official write-up](writeup/README.md) contains the full solve, vulnerable
-register, damaging command, architecture diagrams, all 15 captured screenshots
+register, damaging command, architecture diagrams, all 16 captured screenshots
 and instance flag evidence. Do not distribute `writeup/` during a live event.
 
 This challenge is a simulation for authorized training. Never connect its

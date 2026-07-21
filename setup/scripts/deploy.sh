@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 ./scripts/generate-env.sh
 
 echo "Building challenge images..."
-docker compose --profile build build core-image player
+docker compose --profile build build core-image player scada
 
 echo "Starting isolated challenge stack..."
 docker compose up -d --no-build --remove-orphans

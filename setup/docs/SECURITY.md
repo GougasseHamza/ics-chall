@@ -22,7 +22,12 @@ boundary is not intended to be vulnerable.
 - resource and process limits;
 - independent plant API and flag secrets;
 - flag present only in checker memory after derivation;
-- authoritative physical state unavailable to the player container or HMI.
+- plant API token and unrestricted physical state unavailable to the player
+  and FUXA containers;
+- FUXA editor authentication enabled with ephemeral unknown credentials;
+- FUXA guest access limited to viewing and live tag subscriptions;
+- FUXA receives only the checker projection needed to display validation state
+  and the proof token after the solve condition is true.
 
 ## Prohibited deployment patterns
 

@@ -97,7 +97,7 @@ The result gives us three Modbus endpoints and one web interface:
 172.30.10.11:502   Modbus/TCP
 172.30.10.12:502   Modbus/TCP
 172.30.10.13:502   Modbus/TCP
-172.30.10.20:8080  HMI
+172.30.10.20:1881  FUXA HMI
 ```
 
 The HMI is useful for visual context, but it is not required to solve the
@@ -263,7 +263,18 @@ Once the failure is complete, a final read shows:
 This is more than a display change. The independent physical model has
 recorded terminal equipment damage.
 
-## Capturing the flag
+## Capturing the flag in the HMI
+
+Return to the FUXA process overview at `http://CHALLENGE_HOST:8089`. Once the
+physical-state checker confirms terminal P-101 damage, the incident lamp turns
+red and the `flag{...}` proof value appears directly in the red banner.
+
+![FUXA shows terminal pump damage and the released flag](assets/screenshots/16-fuxa-hmi-flag.png)
+
+This is not a browser-side calculation. FUXA polls a read-only checker tag;
+the checker returns a null proof before the process reaches the terminal state.
+
+## Verifying through the checker API
 
 From the supplied workstation, the lab checker is reachable on the edge
 network:
@@ -396,6 +407,7 @@ is preserved below:
 | 13 | [False-high write](assets/screenshots/13-final-false-level-write.png) |
 | 14 | [Terminal machine failure](assets/screenshots/14-terminal-machine-failure.png) |
 | 15 | [Flag validation](assets/screenshots/15-flag-claimed.png) |
+| 16 | [FUXA HMI flag release](assets/screenshots/16-fuxa-hmi-flag.png) |
 
 ## Conclusion
 

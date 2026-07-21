@@ -1,0 +1,115 @@
+{
+  "version": "1.00",
+  "name": "Rivermark Line 4 Operations",
+  "devices": {
+    "fuxa_server": {
+      "id": "0",
+      "name": "Fuxa Server",
+      "type": "FuxaServer",
+      "enabled": true,
+      "polling": 1000,
+      "property": {},
+      "tags": {}
+    },
+    "plc101": {
+      "id": "plc101",
+      "name": "PLC-101",
+      "type": "ModbusTCP",
+      "enabled": true,
+      "polling": 500,
+      "property": {
+        "address": "172.30.10.11:502",
+        "slaveid": "1",
+        "connectionOption": "TcpPort",
+        "delay": 10,
+        "socketReuse": false
+      },
+      "tags": {
+        "plc101_tank_level": {"id":"plc101_tank_level","name":"Tank Level","type":"UInt16","address":"1","memaddress":"300000","divisor":100,"format":1},
+        "plc101_inlet_open": {"id":"plc101_inlet_open","name":"Inlet Open","type":"UInt16","address":"2","memaddress":"300000"},
+        "plc101_pump_running": {"id":"plc101_pump_running","name":"Pump Running","type":"UInt16","address":"3","memaddress":"300000"},
+        "plc101_pump_temperature": {"id":"plc101_pump_temperature","name":"Pump Temperature","type":"UInt16","address":"4","memaddress":"300000","divisor":10,"format":1},
+        "plc101_pump_vibration": {"id":"plc101_pump_vibration","name":"Pump Vibration","type":"UInt16","address":"5","memaddress":"300000","divisor":10,"format":1},
+        "plc101_dry_run_seconds": {"id":"plc101_dry_run_seconds","name":"Dry Run Seconds","type":"UInt16","address":"6","memaddress":"300000","divisor":10,"format":1},
+        "plc101_pump_damage": {"id":"plc101_pump_damage","name":"Pump Damage","type":"UInt16","address":"7","memaddress":"300000","divisor":100,"format":1},
+        "plc101_low_level_alarm": {"id":"plc101_low_level_alarm","name":"Low Level Alarm","type":"UInt16","address":"8","memaddress":"300000"},
+        "plc101_dry_run_alarm": {"id":"plc101_dry_run_alarm","name":"Dry Run Alarm","type":"UInt16","address":"9","memaddress":"300000"},
+        "plc101_machine_state": {"id":"plc101_machine_state","name":"Machine State","type":"UInt16","address":"10","memaddress":"300000"}
+      }
+    },
+    "plc102": {
+      "id": "plc102",
+      "name": "PLC-102",
+      "type": "ModbusTCP",
+      "enabled": true,
+      "polling": 500,
+      "property": {
+        "address": "172.30.10.12:502",
+        "slaveid": "1",
+        "connectionOption": "TcpPort",
+        "delay": 10,
+        "socketReuse": false
+      },
+      "tags": {
+        "plc102_bottle_level": {"id":"plc102_bottle_level","name":"Bottle Level","type":"UInt16","address":"1","memaddress":"300000","divisor":100,"format":1},
+        "plc102_bottle_position": {"id":"plc102_bottle_position","name":"Bottle Position","type":"UInt16","address":"2","memaddress":"300000","divisor":100,"format":1},
+        "plc102_conveyor_running": {"id":"plc102_conveyor_running","name":"Conveyor Running","type":"UInt16","address":"3","memaddress":"300000"},
+        "plc102_good_bottles": {"id":"plc102_good_bottles","name":"Good Bottles","type":"UInt16","address":"4","memaddress":"300000"},
+        "plc102_rejected_bottles": {"id":"plc102_rejected_bottles","name":"Rejected Bottles","type":"UInt16","address":"5","memaddress":"300000"},
+        "plc102_spill_alarm": {"id":"plc102_spill_alarm","name":"Spill Alarm","type":"UInt16","address":"6","memaddress":"300000"}
+      }
+    },
+    "validator": {
+      "id": "validator",
+      "name": "Incident Validator",
+      "type": "WebAPI",
+      "enabled": true,
+      "polling": 1000,
+      "property": {
+        "address": "http://172.30.30.30:8080/api/claim",
+        "method": "GET",
+        "format": "JSON"
+      },
+      "tags": {
+        "validator_solved": {"id":"validator_solved","name":"Solved","type":"Bool","address":"solved"},
+        "validator_machine_state": {"id":"validator_machine_state","name":"Validated Machine State","type":"String","address":"machine_state"},
+        "validator_flag": {"id":"validator_flag","name":"Proof Flag","type":"String","address":"flag"}
+      }
+    }
+  },
+  "hmi": {
+    "views": [
+      {
+        "id": "line4_overview",
+        "name": "Line 4 Process Overview",
+        "profile": {"width": 1440, "height": 900, "bkcolor": "#edf2f7ff"},
+        "svgfile": "line4.svg",
+        "variables": {},
+        "items": {
+          "GXP_tank": {"id":"GXP_tank","type":"svg-ext-gauge_progress","name":"TK-101 Level","label":"HtmlProgress","property":{"events":[],"variable":"Tank Level","variableId":"plc101_tank_level","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"minmax","min":0,"max":100,"style":[true,true],"color":"#3b82f6"}]}},
+          "MTR_pump": {"id":"MTR_pump","type":"svg-ext-motor","name":"P-101","label":"Motor","property":{"events":[],"variable":"Pump Running","variableId":"plc101_pump_running","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#64748b"},{"type":"range","min":1,"max":1,"color":"#10b981"}]}},
+          "MTR_conveyor": {"id":"MTR_conveyor","type":"svg-ext-motor","name":"CV-101","label":"Motor","property":{"events":[],"variable":"Conveyor Running","variableId":"plc102_conveyor_running","variableSrc":"PLC-102","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#64748b"},{"type":"range","min":1,"max":1,"color":"#10b981"}]}},
+          "GSE_inlet": {"id":"GSE_inlet","type":"svg-ext-gauge_semaphore","name":"XV-101","label":"HtmlSemaphore","property":{"events":[],"variable":"Inlet Open","variableId":"plc101_inlet_open","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#64748b"},{"type":"range","min":1,"max":1,"color":"#10b981"}]}},
+          "GSE_alarm": {"id":"GSE_alarm","type":"svg-ext-gauge_semaphore","name":"Dry Run Alarm","label":"HtmlSemaphore","property":{"events":[],"variable":"Dry Run Alarm","variableId":"plc101_dry_run_alarm","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#10b981"},{"type":"range","min":1,"max":1,"color":"#ef4444"}]}},
+          "GSE_solved": {"id":"GSE_solved","type":"svg-ext-gauge_semaphore","name":"Incident State","label":"HtmlSemaphore","property":{"events":[],"variable":"Solved","variableId":"validator_solved","variableSrc":"Incident Validator","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#f59e0b"},{"type":"range","min":1,"max":1,"color":"#ef4444"}]}},
+          "VAL_tank": {"id":"VAL_tank","type":"svg-ext-value","name":"Tank Level","label":"Value","property":{"events":[],"variable":"Tank Level","variableId":"plc101_tank_level","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":100,"text":" %"}]}},
+          "VAL_temp": {"id":"VAL_temp","type":"svg-ext-value","name":"Pump Temperature","label":"Value","property":{"events":[],"variable":"Pump Temperature","variableId":"plc101_pump_temperature","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":200,"text":" C"}]}},
+          "VAL_vibration": {"id":"VAL_vibration","type":"svg-ext-value","name":"Pump Vibration","label":"Value","property":{"events":[],"variable":"Pump Vibration","variableId":"plc101_pump_vibration","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":100,"text":" mm/s"}]}},
+          "VAL_dry": {"id":"VAL_dry","type":"svg-ext-value","name":"Dry Run Seconds","label":"Value","property":{"events":[],"variable":"Dry Run Seconds","variableId":"plc101_dry_run_seconds","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":999,"text":" s"}]}},
+          "VAL_damage": {"id":"VAL_damage","type":"svg-ext-value","name":"Pump Damage","label":"Value","property":{"events":[],"variable":"Pump Damage","variableId":"plc101_pump_damage","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":100,"text":" %"}]}},
+          "VAL_bottle": {"id":"VAL_bottle","type":"svg-ext-value","name":"Bottle Level","label":"Value","property":{"events":[],"variable":"Bottle Level","variableId":"plc102_bottle_level","variableSrc":"PLC-102","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":100,"text":" %"}]}},
+          "VAL_good": {"id":"VAL_good","type":"svg-ext-value","name":"Good Bottles","label":"Value","property":{"events":[],"variable":"Good Bottles","variableId":"plc102_good_bottles","variableSrc":"PLC-102","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":65535,"text":" total"}]}},
+          "VAL_rejected": {"id":"VAL_rejected","type":"svg-ext-value","name":"Rejected Bottles","label":"Value","property":{"events":[],"variable":"Rejected Bottles","variableId":"plc102_rejected_bottles","variableSrc":"PLC-102","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":65535,"text":" total"}]}},
+          "VAL_state": {"id":"VAL_state","type":"svg-ext-value","name":"Validated Machine State","label":"Value","property":{"events":[],"variable":"Validated Machine State","variableId":"validator_machine_state","variableSrc":"Incident Validator","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[]}},
+          "VAL_flag": {"id":"VAL_flag","type":"svg-ext-value","name":"Incident Proof","label":"Value","property":{"events":[],"variable":"Proof Flag","variableId":"validator_flag","variableSrc":"Incident Validator","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[]}}
+        }
+      }
+    ],
+    "layout": {
+      "start": "line4_overview",
+      "navigation": {"mode":"fix","type":"inline","items":[{"icon":"factory","view":"line4_overview","link":"","text":"Line 4"}]},
+      "header": {}
+    }
+  },
+  "server": {"id":"0","name":"FUXA Server","type":"FuxaServer","property":{}}
+}

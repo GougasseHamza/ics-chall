@@ -176,19 +176,23 @@ not teach or require internet-wide device discovery.
 
 Easier:
 
-- label holding register 40001 as `CAL_BIAS` on the HMI diagnostics panel;
+- add a RIO-101 diagnostics view and label holding register 40001 as
+  `CAL_BIAS`;
 - display both the raw register and scaled value side by side;
 - lower the initial tank level or reduce the damage delay.
 
 Harder:
 
-- remove IP addresses from the HMI while retaining device and tag names;
+- replace the FUXA device addresses with Docker DNS names while retaining
+  device and tag names;
 - provide a short packet capture containing normal PLC-to-RIO polling;
 - add a decoy Modbus temperature gateway;
 - require players to encode a negative signed register during a second stage;
 - monitor and revert the malicious bias unless the write is repeated.
 
-The device-identification route is sufficient without an HMI clue page: the
+The production FUXA project deliberately polls only PLC-101 and PLC-102, not
+RIO-101. The device-identification route is sufficient without an HMI clue
+page: the
 names `Tank and Transfer Pump Controller`, `Bottle Conveyor Controller`, and
 `LT-101 Remote I/O Gateway` identify the relevant data flow. Keep the register
 map bounded and retain the player hint that measurements normally use 3xxxx
@@ -198,7 +202,7 @@ corruption.
 
 ## CTFd integration
 
-For this standalone instance, retrieve the derived flag after running the
-author test and add it as an exact CTFd flag. For per-team instances, keep the
-checker endpoint as the source of truth and deploy a unique `INSTANCE_ID` and
-secret per team.
+For this standalone instance, retrieve the derived flag from the FUXA incident
+banner or checker after running the author test and add it as an exact CTFd
+flag. For per-team instances, keep the checker endpoint as the source of truth
+and deploy a unique `INSTANCE_ID` and secret per team.

@@ -26,8 +26,8 @@ The authoritative state owner advances at a 100 ms period. It models:
 - terminal machine state.
 
 Actuator commands are accepted only from an authenticated field-network API.
-The API token is present in the plant, PLC, SCADA and checker containers, but
-not in the player workstation.
+The API token is present in the plant, PLC and checker containers, but not in
+FUXA or the player workstation.
 
 ### PLC-101 (`plc1`)
 
@@ -55,17 +55,24 @@ the primary vulnerable controller.
 
 ### SCADA/HMI (`scada`)
 
-The HMI polls both PLCs over Modbus rather than reading physical simulation
-state. It therefore displays the same corrupted LT-101 value trusted by the
-controller. Its public operator controls allow automatic mode and safe stop.
+The operator HMI is FUXA 1.3.1, pinned by image digest. It polls PLC-101 and
+PLC-102 directly over Modbus/TCP and therefore displays the same corrupted
+LT-101 value trusted by the controller. It does not connect to RIO-101 and does
+not receive the plant API token.
+
+FUXA also polls the checker through a read-only WebAPI device. Before terminal
+damage the proof tag is null. After the checker validates the physical failure,
+the `flag{...}` value appears in the red incident banner. The editor is guarded
+by authentication; its administrator password and JWT secret are replaced by
+fresh random values on every container creation. Players receive guest view
+access only, and guest socket writes are rejected by FUXA.
 
 ### Player workstation (`player`)
 
 The only direct entry into `control_net`. It runs an unprivileged `player`
 account with `nmap`, `curl`, `netcat`, `tcpdump`, and the `mbcli` Modbus helper.
-The HMI supplies normal tag-source diagnostics, and Modbus function 43/14
-supplies device identity. The workstation has no hidden register map, Docker
-socket, host mounts, plant token or flag secret.
+Modbus function 43/14 supplies device identity. The workstation has no hidden
+register map, Docker socket, host mounts, plant token or flag secret.
 
 ### Incident validator (`checker`)
 
@@ -87,7 +94,7 @@ is not stored in any player-reachable image or file.
 | control | `172.30.10.11:502` | PLC-101 | No |
 | control | `172.30.10.12:502` | PLC-102 | No |
 | control | `172.30.10.13:502` | RIO-101 level gateway | No |
-| control | `172.30.10.20:8080` | HMI | Through edge port 8089 |
+| control | `172.30.10.20:1881` | FUXA HMI | Through edge port 8089 |
 | control | `172.30.10.50` | Player workstation | Through edge port 2224 |
 | field | `172.30.20.10:8000` | Physical process | No |
 | field | `172.30.20.40:8080` | Checker | Through edge port 8090 |
