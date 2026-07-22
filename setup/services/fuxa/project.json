@@ -66,7 +66,7 @@
       {
         "id": "line4_overview",
         "name": "Line 4 Process Overview",
-        "profile": {"width":1440,"height":900,"bkcolor":"#e9f0f7ff"},
+        "profile": {"width":1600,"height":960,"bkcolor":"#e9f0f7ff"},
         "svgfile": "line4.svg",
         "variables": {},
         "items": {
@@ -79,12 +79,15 @@
           "GSE_controller": {"id":"GSE_controller","type":"svg-ext-gauge_semaphore","name":"Controller State","label":"HtmlSemaphore","property":{"events":[],"variable":"Machine State","variableId":"plc101_machine_state","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#22c55e"},{"type":"range","min":1,"max":2,"color":"#f59e0b"},{"type":"range","min":3,"max":3,"color":"#ef4444"}]}},
           "GSE_inlet": {"id":"GSE_inlet","type":"svg-ext-gauge_semaphore","name":"XV-101","label":"HtmlSemaphore","property":{"events":[],"variable":"Inlet Open","variableId":"plc101_inlet_open","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#94a3b8"},{"type":"range","min":1,"max":1,"color":"#22c55e"}]}},
           "GSE_inlet_card": {"id":"GSE_inlet_card","type":"svg-ext-gauge_semaphore","name":"XV-101 Status Card","label":"HtmlSemaphore","property":{"events":[],"variable":"Inlet Open","variableId":"plc101_inlet_open","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#94a3b8"},{"type":"range","min":1,"max":1,"color":"#22c55e"}]}},
+          "GSE_pump_card": {"id":"GSE_pump_card","type":"svg-ext-gauge_semaphore","name":"P-101 Status Strip","label":"HtmlSemaphore","property":{"events":[],"variable":"Pump Running","variableId":"plc101_pump_running","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#94a3b8"},{"type":"range","min":1,"max":1,"color":"#22c55e"}]}},
+          "GSE_conveyor_card": {"id":"GSE_conveyor_card","type":"svg-ext-gauge_semaphore","name":"CV-101 Status Strip","label":"HtmlSemaphore","property":{"events":[],"variable":"Conveyor Running","variableId":"plc101_conveyor_running","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#94a3b8"},{"type":"range","min":1,"max":1,"color":"#22c55e"}]}},
           "GSE_pump": {"id":"GSE_pump","type":"svg-ext-gauge_semaphore","name":"Pump Run","label":"HtmlSemaphore","property":{"events":[],"variable":"Pump Running","variableId":"plc101_pump_running","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#94a3b8"},{"type":"range","min":1,"max":1,"color":"#22c55e"}]}},
           "GSE_conveyor": {"id":"GSE_conveyor","type":"svg-ext-gauge_semaphore","name":"Conveyor Run","label":"HtmlSemaphore","property":{"events":[],"variable":"Conveyor Running","variableId":"plc101_conveyor_running","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#94a3b8"},{"type":"range","min":1,"max":1,"color":"#22c55e"}]}},
           "GSE_alarm": {"id":"GSE_alarm","type":"svg-ext-gauge_semaphore","name":"Dry Run Alarm","label":"HtmlSemaphore","property":{"events":[],"variable":"Dry Run Alarm","variableId":"plc101_dry_run_alarm","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#22c55e"},{"type":"range","min":1,"max":1,"color":"#ef4444"}]}},
           "GSE_spill": {"id":"GSE_spill","type":"svg-ext-gauge_semaphore","name":"Spill Alarm","label":"HtmlSemaphore","property":{"events":[],"variable":"Spill Alarm","variableId":"plc101_spill_alarm","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#22c55e"},{"type":"range","min":1,"max":1,"color":"#ef4444"}]}},
           "GSE_solved": {"id":"GSE_solved","type":"svg-ext-gauge_semaphore","name":"Incident State","label":"HtmlSemaphore","property":{"events":[],"variable":"Solved","variableId":"validator_solved","variableSrc":"Incident Validator","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"range","min":0,"max":0,"color":"#f59e0b"},{"type":"range","min":1,"max":1,"color":"#ef4444"}]}},
           "VAL_tank": {"id":"VAL_tank","type":"svg-ext-value","name":"Tank Level","label":"Value","property":{"events":[],"variable":"Tank Level","variableId":"plc101_tank_level","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":100,"text":" %"}]}},
+          "VAL_tank_card": {"id":"VAL_tank_card","type":"svg-ext-value","name":"Tank Level Readout","label":"Value","property":{"events":[],"variable":"Tank Level","variableId":"plc101_tank_level","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":100,"text":" %"}]}},
           "VAL_temp": {"id":"VAL_temp","type":"svg-ext-value","name":"Pump Temperature","label":"Value","property":{"events":[],"variable":"Pump Temperature","variableId":"plc101_pump_temperature","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":200,"text":" C"}]}},
           "VAL_vibration": {"id":"VAL_vibration","type":"svg-ext-value","name":"Pump Vibration","label":"Value","property":{"events":[],"variable":"Pump Vibration","variableId":"plc101_pump_vibration","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":100,"text":" mm/s"}]}},
           "VAL_dry": {"id":"VAL_dry","type":"svg-ext-value","name":"Dry Run Seconds","label":"Value","property":{"events":[],"variable":"Dry Run Seconds","variableId":"plc101_dry_run_seconds","variableSrc":"PLC-101","alarmId":"","alarmSrc":"","alarm":"","alarmColor":"","ranges":[{"type":"unit","min":0,"max":999,"text":" s"}]}},
@@ -101,6 +104,7 @@
     ],
     "layout": {
       "start": "line4_overview",
+      "hidenavigation": true,
       "navigation": {"mode":"fix","type":"inline","items":[{"icon":"factory","view":"line4_overview","link":"","text":"Line 4"}]},
       "header": {}
     }

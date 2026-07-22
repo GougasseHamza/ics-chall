@@ -52,6 +52,11 @@ def test_fuxa_uses_one_integrated_plc_and_unique_svg_ids():
     assert set(project["devices"]) == {"fuxa_server", "plc101", "validator"}
     assert project["devices"]["plc101"]["tags"]["plc101_conveyor_running"]["address"] == "13"
 
+    view = project["hmi"]["views"][0]
+    assert view["profile"]["width"] == 1600
+    assert view["profile"]["height"] == 960
+    assert project["hmi"]["layout"]["hidenavigation"] is True
+
     root = ElementTree.parse(FUXA_ROOT / "line4.svg").getroot()
     ids = [element.attrib["id"] for element in root.iter() if "id" in element.attrib]
     assert len(ids) == len(set(ids))
