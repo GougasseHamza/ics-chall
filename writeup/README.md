@@ -36,7 +36,8 @@ breaks a machine, is the actual challenge.
 You do not need previous ICS experience, but four components matter:
 
 - **RIO-101** reads the physical tank-level sensor and publishes the value.
-- **PLC-101** reads that value and controls the inlet and transfer pump.
+- **PLC-101** reads that value and controls the inlet, transfer pump, filling
+  cycle and conveyor.
 - **HMI/SCADA** shows operators what the PLC believes is happening.
 - **The plant model** owns the real tank and pump state. The checker trusts
   this state, not whatever number is displayed by the HMI.
@@ -79,23 +80,22 @@ nmap -sn -n 172.30.10.0/24
 
 ![Live hosts on the control VLAN](assets/screenshots/02-network-discovery.png)
 
-The interesting addresses are `.11`, `.12`, `.13` and `.20`. Address `.1` is
+The interesting addresses are `.11`, `.13` and `.20`. Address `.1` is
 the network gateway, while `.50` is our own workstation.
 
-Now we can scan only the four candidates:
+Now we can scan only the three candidates:
 
 ```sh
 nmap -sT -Pn -n -p- --open --min-rate 3000 --max-retries 1 \
-  172.30.10.11-13 172.30.10.20
+  172.30.10.11 172.30.10.13 172.30.10.20
 ```
 
 ![Targeted service discovery](assets/screenshots/06-live-host-and-service-discovery.png)
 
-The result gives us three Modbus endpoints and one web interface:
+The result gives us two Modbus endpoints and one web interface:
 
 ```text
 172.30.10.11:502   Modbus/TCP
-172.30.10.12:502   Modbus/TCP
 172.30.10.13:502   Modbus/TCP
 172.30.10.20:1881  FUXA HMI
 ```
@@ -110,12 +110,14 @@ conveyor-running tag is active. When either PLC output stops, the corresponding
 animation stops too. This gives us a visual check that our protocol actions are
 changing the simulated process.
 
+![One-PLC FUXA process overview in normal operation](assets/screenshots/17-fuxa-one-plc-overview.png)
+
 <details>
 <summary>Why was the first full-subnet scan so slow?</summary>
 
 A full TCP scan of `/24` probes more than 16 million address/port pairs. Unused
 addresses silently drop traffic, forcing Nmap to wait and retry. Discovering
-live hosts first reduces the problem to four systems.
+live hosts first reduces the problem to three systems.
 
 ![Nmap RTT warnings from an unnecessarily broad scan](assets/screenshots/05-full-subnet-scan-timeout.png)
 
@@ -128,18 +130,16 @@ each device's standard identity objects:
 
 ```sh
 mbcli identify 172.30.10.11
-mbcli identify 172.30.10.12
 mbcli identify 172.30.10.13
 ```
 
-![Device identification for all three Modbus systems](assets/screenshots/07-modbus-device-identification.png)
+![Device identification for both Modbus systems](assets/screenshots/07-modbus-device-identification.png)
 
 The names explain the process topology:
 
 | Address | Identity | Relevance |
 |---|---|---|
-| `172.30.10.11` | PLC-101: Tank and Transfer Pump Controller | Controls the machine we must break |
-| `172.30.10.12` | PLC-102: Bottle Conveyor Controller | Unrelated production context |
+| `172.30.10.11` | PLC-101: Integrated Bottling Cell Controller | Controls the inlet, pump, filling cycle and conveyor |
 | `172.30.10.13` | RIO-101: LT-101 Remote I/O Gateway | Supplies the tank-level measurement |
 
 This is the key deduction. PLC-101 is the **victim controller**, but RIO-101 is
@@ -279,7 +279,7 @@ red and the `flag{...}` proof value appears directly in the red banner.
 ![FUXA shows terminal pump damage and the released flag](assets/screenshots/16-fuxa-hmi-flag.png)
 
 This is not a browser-side calculation. FUXA polls a read-only checker tag;
-the checker returns a null proof before the process reaches the terminal state.
+the checker returns `PROOF LOCKED` before the process reaches the terminal state.
 The pump animation also stops at this point because PLC-101 reports that the
 seized pump is no longer running.
 
@@ -376,10 +376,9 @@ For reference, the complete solve can be reduced to:
 ```sh
 nmap -sn -n 172.30.10.0/24
 nmap -sT -Pn -n -p- --open --min-rate 3000 --max-retries 1 \
-  172.30.10.11-13 172.30.10.20
+  172.30.10.11 172.30.10.13 172.30.10.20
 
 mbcli identify 172.30.10.11
-mbcli identify 172.30.10.12
 mbcli identify 172.30.10.13
 
 mbcli read-input 172.30.10.13 30001 2
@@ -417,6 +416,7 @@ is preserved below:
 | 14 | [Terminal machine failure](assets/screenshots/14-terminal-machine-failure.png) |
 | 15 | [Flag validation](assets/screenshots/15-flag-claimed.png) |
 | 16 | [FUXA HMI flag release](assets/screenshots/16-fuxa-hmi-flag.png) |
+| 17 | [One-PLC FUXA process overview](assets/screenshots/17-fuxa-one-plc-overview.png) |
 
 ## Conclusion
 

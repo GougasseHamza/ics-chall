@@ -8,14 +8,14 @@ This directory defines the operator-facing SCADA/HMI for Line 4.
 - `seed.js` builds FUXA's ephemeral SQLite project and user databases.
 - `entrypoint.sh` seeds the project before starting the normal FUXA server.
 
-FUXA reads PLC-101 and PLC-102 directly over Modbus/TCP. It does not connect to
+FUXA reads the integrated PLC-101 directly over Modbus/TCP. It does not connect to
 RIO-101, hold the plant API token, or contain the flag secret. A separate
 read-only WebAPI device polls the incident validator, whose proof field remains
-null until terminal simulated damage is confirmed.
+locked until terminal simulated damage is confirmed.
 
-The mimic animations are driven by PLC tags. P-101 rotates only while PLC-101
-reports the pump running, the CV-101 belt moves only while PLC-102 reports the
-conveyor running, and the active-bottle gauge fills from PLC-102's bottle-level
+The mimic animations are driven by PLC tags. P-101 and the product-flow path
+move only while PLC-101 reports the pump running, the CV-101 belt moves only
+while PLC-101 reports the conveyor running, and the active-bottle gauge fills from PLC-101's bottle-level
 input. These are native FUXA actions and gauges rather than independent visual
 timers, so a stopped process produces a stopped display.
 

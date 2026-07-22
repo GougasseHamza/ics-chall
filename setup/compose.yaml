@@ -91,31 +91,6 @@ services:
       retries: 12
       start_period: 5s
 
-  plc2:
-    <<: *core-service
-    command: ["python", "-m", "services.plc2.app"]
-    hostname: plc-102
-    depends_on:
-      plant:
-        condition: service_healthy
-    cap_add:
-      - NET_BIND_SERVICE
-    networks:
-      control_net:
-        ipv4_address: 172.30.10.12
-      field_net:
-        ipv4_address: 172.30.20.12
-    expose:
-      - "502"
-    mem_limit: 96m
-    cpus: 0.35
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',502),2); s.close()"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
-      start_period: 5s
-
   scada:
     image: last-bottle-fuxa:${IMAGE_TAG:-local}
     build:
@@ -126,8 +101,6 @@ services:
     hostname: hmi-04
     depends_on:
       plc1:
-        condition: service_healthy
-      plc2:
         condition: service_healthy
       checker:
         condition: service_healthy

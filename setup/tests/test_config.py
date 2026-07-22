@@ -1,11 +1,13 @@
-from services.common.config import PLC1Holding, PLC1Input, PLC2Holding, RIOHolding, RIOInput
+from services.common.config import PLC1Holding, PLC1Input, RIOHolding, RIOInput
 from services.rio.app import RIO101, signed_register
 
 
 def test_register_offsets_are_stable():
     assert int(PLC1Holding.PUMP_MODE) == 1
     assert int(PLC1Input.MACHINE_STATE) == 9
-    assert int(PLC2Holding.CONVEYOR_MODE) == 0
+    assert int(PLC1Holding.CONVEYOR_MODE) == 5
+    assert int(PLC1Input.BOTTLE_LEVEL) == 10
+    assert int(PLC1Input.SPILL_ALARM) == 15
     assert int(RIOHolding.LEVEL_CALIBRATION_BIAS) == 0
     assert int(RIOInput.REPORTED_TANK_LEVEL) == 0
 

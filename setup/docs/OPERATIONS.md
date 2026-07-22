@@ -28,14 +28,14 @@ Do not manually publish PLC port 502. Do not attach `control_net` or
 ```sh
 ./scripts/status.sh
 docker compose ps
-docker compose logs --tail=100 plant rio plc1 plc2 scada checker
+docker compose logs --tail=100 plant rio plc1 scada checker
 docker stats --no-stream
 ```
 
 Expected healthy services:
 
 ```text
-plant rio plc1 plc2 scada checker player
+plant rio plc1 scada checker player
 ```
 
 The `core-image` service is build-only and does not run.

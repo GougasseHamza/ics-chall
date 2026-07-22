@@ -72,8 +72,7 @@ class PlantModel:
 
     def set_actuators(self, component: str, values: dict) -> dict:
         allowed = {
-            "plc1": {"inlet_open", "pump_running"},
-            "plc2": {"conveyor_running"},
+            "plc1": {"inlet_open", "pump_running", "conveyor_running"},
         }
         if component not in allowed:
             raise ValueError("unknown actuator component")
@@ -121,7 +120,7 @@ class PlantModel:
                 # the normal PLC scan overlap between pump stop and conveyor
                 # start from producing a nuisance spill alarm.
                 if s.bottle_position <= 25.0:
-                    s.bottle_level = min(130.0, s.bottle_level + self.BOTTLE_FILL_RATE * dt)
+                    s.bottle_level = min(100.0, s.bottle_level + self.BOTTLE_FILL_RATE * dt)
                 else:
                     s.spill_alarm = True
 

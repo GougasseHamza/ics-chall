@@ -31,6 +31,7 @@ class PLC1Holding(IntEnum):
     LOW_SETPOINT = 2
     HIGH_SETPOINT = 3
     RESET_COMMAND = 4
+    CONVEYOR_MODE = 5
 
 
 class PLC1Input(IntEnum):
@@ -44,20 +45,12 @@ class PLC1Input(IntEnum):
     LOW_LEVEL_ALARM = 7
     DRY_RUN_ALARM = 8
     MACHINE_STATE = 9
-
-
-class PLC2Holding(IntEnum):
-    CONVEYOR_MODE = 0
-    RESET_COMMAND = 1
-
-
-class PLC2Input(IntEnum):
-    BOTTLE_LEVEL = 0
-    BOTTLE_POSITION = 1
-    CONVEYOR_STATUS = 2
-    GOOD_BOTTLES = 3
-    REJECTED_BOTTLES = 4
-    SPILL_ALARM = 5
+    BOTTLE_LEVEL = 10
+    BOTTLE_POSITION = 11
+    CONVEYOR_STATUS = 12
+    GOOD_BOTTLES = 13
+    REJECTED_BOTTLES = 14
+    SPILL_ALARM = 15
 
 
 class RIOHolding(IntEnum):
@@ -70,7 +63,6 @@ class RIOInput(IntEnum):
 
 
 PLC1_HOST = "172.30.10.11"
-PLC2_HOST = "172.30.10.12"
 RIO_HOST = "172.30.10.13"
 PLANT_URL = "http://plant:8000"
 MODBUS_PORT = 502

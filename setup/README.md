@@ -1,7 +1,7 @@
 # The Last Bottle
 
 `The Last Bottle` is a standalone industrial-control-system CTF challenge. It
-models a beverage bottling cell with two PLCs, a Modbus remote-I/O gateway, a
+models a beverage bottling cell with one integrated PLC, a Modbus remote-I/O gateway, a
 FUXA SCADA/HMI, a physical process, an SSH player workstation, and a
 physical-impact flag checker.
 
@@ -22,8 +22,8 @@ false telemetry. The flag is issued only after the independent physics model
 records sustained dry running and terminal mechanical damage.
 
 Discovery comes from the live system rather than hidden answer files. FUXA
-polls PLC-101 and PLC-102 over Modbus/TCP and displays their live process tags.
-Its pump, conveyor and bottle-fill animations are driven by those PLC tags, so
+polls PLC-101 over Modbus/TCP and displays its live process tags.
+Its pump, product-flow, conveyor and bottle-fill animations are driven by those PLC tags, so
 the mimic starts and stops with the simulated equipment.
 Modbus device identification describes each endpoint, and deliberately bounded
 register maps let players test a small number of meaningful addresses while
@@ -90,8 +90,7 @@ setup/
 │   ├── checker/                 # Independent physical-impact validator
 │   ├── common/                  # Shared runtime image and helpers
 │   ├── plant/                   # Authoritative physical-process model
-│   ├── plc1/                    # Tank and transfer-pump controller
-│   ├── plc2/                    # Bottle-conveyor controller
+│   ├── plc1/                    # Integrated bottling-cell controller
 │   ├── rio/                     # Vulnerable LT-101 remote-I/O gateway
 │   └── fuxa/                    # Pinned FUXA image, project, SVG and secure seeder
 ├── scripts/                     # Deploy, reset, test and isolation checks

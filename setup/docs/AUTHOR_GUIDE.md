@@ -55,19 +55,18 @@ References:
    ```sh
    nmap -sn -n 172.30.10.0/24
    nmap -sT -Pn -n -p- --open --min-rate 3000 --max-retries 1 \
-     172.30.10.11-13 172.30.10.20
+     172.30.10.11 172.30.10.13 172.30.10.20
    ```
 
 3. Query the standard Modbus device-identification objects:
 
    ```sh
    mbcli identify 172.30.10.11
-   mbcli identify 172.30.10.12
    mbcli identify 172.30.10.13
    ```
 
-   Device identity distinguishes the tank/pump controller, unrelated bottle
-   conveyor controller and LT-101 remote-I/O gateway. The player should reason
+   Device identity distinguishes the integrated bottling-cell controller and
+   LT-101 remote-I/O gateway. The player should reason
    that PLC-101 is the affected controller, while RIO-101 is the source of the
    contradictory tank-level measurement.
 4. Read RIO-101 input register 30001 and observe it across multiple samples:
@@ -156,7 +155,21 @@ must propagate through the controller and produce the terminal process state.
 | PLC-101 | 30005 | R | vibration mm/s | 0.1 |
 | PLC-101 | 30006 | R | dry-run seconds | 0.1 |
 | PLC-101 | 30007 | R | damage percent | 0.01% |
+| PLC-101 | 30008 | R | reported low-level alarm | 1 |
+| PLC-101 | 30009 | R | dry-run alarm | 1 |
 | PLC-101 | 30010 | R | machine state | 1 |
+| PLC-101 | 30011 | R | active bottle fill | 0.01% |
+| PLC-101 | 30012 | R | bottle conveyor position | 0.01% |
+| PLC-101 | 30013 | R | conveyor status | 1 |
+| PLC-101 | 30014 | R | good bottle count | 1 |
+| PLC-101 | 30015 | R | rejected bottle count | 1 |
+| PLC-101 | 30016 | R | filler spill alarm | 1 |
+| PLC-101 | 40001 | R/W | inlet mode | 1 |
+| PLC-101 | 40002 | R/W | pump mode | 1 |
+| PLC-101 | 40003 | R/W | low-level setpoint | 0.01% |
+| PLC-101 | 40004 | R/W | high-level setpoint | 0.01% |
+| PLC-101 | 40005 | R/W | maintenance reset command | 1 |
+| PLC-101 | 40006 | R/W | conveyor mode | 1 |
 
 ## Defensive lessons
 
@@ -190,10 +203,10 @@ Harder:
 - require players to encode a negative signed register during a second stage;
 - monitor and revert the malicious bias unless the write is repeated.
 
-The production FUXA project deliberately polls only PLC-101 and PLC-102, not
+The production FUXA project deliberately polls only PLC-101, not
 RIO-101. The device-identification route is sufficient without an HMI clue
 page: the
-names `Tank and Transfer Pump Controller`, `Bottle Conveyor Controller`, and
+names `Integrated Bottling Cell Controller` and
 `LT-101 Remote I/O Gateway` identify the relevant data flow. Keep the register
 map bounded and retain the player hint that measurements normally use 3xxxx
 references while settings use 4xxxx references. The intended skill is

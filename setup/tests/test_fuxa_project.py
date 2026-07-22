@@ -16,8 +16,9 @@ def test_animation_actions_follow_plc_status_tags():
 
     expected = {
         "MTR_pump": "plc101_pump_running",
-        "MTR_conveyor": "plc102_conveyor_running",
-        "PIE_conveyor": "plc102_conveyor_running",
+        "PIE_product": "plc101_pump_running",
+        "MTR_conveyor": "plc101_conveyor_running",
+        "PIE_conveyor": "plc101_conveyor_running",
     }
     for item_id, variable_id in expected.items():
         actions = items[item_id]["property"]["actions"]
@@ -30,7 +31,7 @@ def test_animation_actions_follow_plc_status_tags():
 
 def test_bottle_and_tank_progress_gauges_have_native_fuxa_structure():
     items = load_project()["hmi"]["views"][0]["items"]
-    assert items["GXP_bottle_fill"]["property"]["variableId"] == "plc102_bottle_level"
+    assert items["GXP_bottle_fill"]["property"]["variableId"] == "plc101_bottle_level"
     assert items["GXP_tank"]["property"]["variableId"] == "plc101_tank_level"
 
     root = ElementTree.parse(FUXA_ROOT / "line4.svg").getroot()
@@ -44,3 +45,13 @@ def test_bottle_and_tank_progress_gauges_have_native_fuxa_structure():
         assert any(item.startswith("A-GXP_") for item in child_ids)
         assert any(item.startswith("B-GXP_") for item in child_ids)
         assert any(item.startswith("H-GXP_") for item in child_ids)
+
+
+def test_fuxa_uses_one_integrated_plc_and_unique_svg_ids():
+    project = load_project()
+    assert set(project["devices"]) == {"fuxa_server", "plc101", "validator"}
+    assert project["devices"]["plc101"]["tags"]["plc101_conveyor_running"]["address"] == "13"
+
+    root = ElementTree.parse(FUXA_ROOT / "line4.svg").getroot()
+    ids = [element.attrib["id"] for element in root.iter() if "id" in element.attrib]
+    assert len(ids) == len(set(ids))

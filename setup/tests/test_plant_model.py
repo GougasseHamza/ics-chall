@@ -38,14 +38,14 @@ def test_short_dry_event_does_not_break_pump():
     assert state["machine_state"] != int(MachineState.BROKEN)
 
 
-def test_component_cannot_write_another_components_actuator():
+def test_component_cannot_write_an_unknown_actuator():
     model = PlantModel()
     try:
-        model.set_actuators("plc2", {"pump_running": True})
+        model.set_actuators("plc1", {"unknown_output": True})
     except ValueError as exc:
         assert "unsupported actuator" in str(exc)
     else:
-        raise AssertionError("cross-component actuator write was accepted")
+        raise AssertionError("unknown actuator write was accepted")
 
 
 def test_reset_recovers_terminal_failure():
@@ -55,4 +55,3 @@ def test_reset_recovers_terminal_failure():
     state = model.reset()
     assert state["machine_state"] == int(MachineState.RUNNING)
     assert state["pump_damage"] == 0.0
-

@@ -16,6 +16,11 @@ printf '%s' "$project" | grep -q '172.30.10.11:502'
 printf '%s' "$project" | grep -q '"id":"PIE_conveyor"'
 printf '%s' "$project" | grep -q '"id":"GXP_bottle_fill"'
 printf '%s' "$project" | grep -q '"type":"clockwise"'
+printf '%s' "$project" | grep -q '"variableId":"plc101_conveyor_running"'
+if printf '%s' "$project" | grep -q '172.30.10.12'; then
+    echo "Removed PLC-102 is still present in the FUXA project" >&2
+    exit 1
+fi
 login_status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
     -H 'Content-Type: application/json' \
     -d '{"username":"admin","password":"123456"}' \

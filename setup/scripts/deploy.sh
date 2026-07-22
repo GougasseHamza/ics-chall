@@ -22,7 +22,7 @@ try:
     data = parsed if isinstance(parsed, list) else [parsed]
 except json.JSONDecodeError:
     data = [json.loads(line) for line in raw.splitlines() if line.strip()]
-required = {"plant", "rio", "plc1", "plc2", "scada", "checker", "player"}
+required = {"plant", "rio", "plc1", "scada", "checker", "player"}
 ready = {item.get("Service") for item in data if item.get("State") == "running" and item.get("Health") in ("", "healthy")}
 print("0" if required <= ready else "1")
 ')

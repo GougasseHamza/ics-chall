@@ -37,7 +37,7 @@ def challenge_state() -> dict:
         "pump_damage": round(state["pump_damage"], 1),
         "pump_temperature": round(state["pump_temperature"], 1),
         "dry_run_seconds": round(state["dry_run_seconds"], 1),
-        "flag": instance_flag() if solved else None,
+        "flag": instance_flag() if solved else "PROOF LOCKED",
     }
 
 

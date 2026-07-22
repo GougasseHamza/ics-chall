@@ -32,7 +32,9 @@ FUXA or the player workstation.
 ### PLC-101 (`plc1`)
 
 PLC-101 exposes Modbus/TCP port 502 on `172.30.10.11`. It runs a 200 ms control
-scan for the tank inlet and transfer pump.
+scan for the tank inlet, transfer pump, bottle filling cycle and conveyor. A
+single controller is appropriate for this compact cell and keeps every HMI
+process tag attributable to one live PLC.
 
 Automatic and manual pump modes both enforce the reported low-level permissive.
 PLC-101 obtains that value from RIO-101 over unauthenticated Modbus/TCP. It has
@@ -47,31 +49,26 @@ maintenance calibration bias from holding register 40001, and reports the
 result to PLC-101. A control-network host can change the bias because classic
 Modbus/TCP does not authenticate the writer or protect message integrity.
 
-### PLC-102 (`plc2`)
-
-PLC-102 exposes Modbus/TCP port 502 on `172.30.10.12`. It indexes the conveyor
-after a bottle reaches its fill target. It is operational context rather than
-the primary vulnerable controller.
-
 ### SCADA/HMI (`scada`)
 
 The operator HMI is FUXA 1.3.1, pinned by image digest. It polls PLC-101 and
-PLC-102 directly over Modbus/TCP and therefore displays the same corrupted
-LT-101 value trusted by the controller. It does not connect to RIO-101 and does
-not receive the plant API token.
+therefore displays the same corrupted LT-101 value trusted by the controller,
+along with pump, bottle and conveyor state. It does not connect to RIO-101 and
+does not receive the plant API token.
 
 FUXA also polls the checker through a read-only WebAPI device. Before terminal
-damage the proof tag is null. After the checker validates the physical failure,
+damage the banner reads `PROOF LOCKED`. After the checker validates the physical failure,
 the `flag{...}` value appears in the red incident banner. The editor is guarded
 by authentication; its administrator password and JWT secret are replaced by
 fresh random values on every container creation. Players receive guest view
 access only, and guest socket writes are rejected by FUXA.
 
 The process mimic uses native FUXA actions tied to the same PLC tags. The P-101
-impeller rotates only while PLC-101 reports the pump running. The CV-101 belt
-and drive animate only while PLC-102 reports the conveyor running. A progress
-gauge inside the active bottle follows PLC-102's measured bottle level. This
-keeps the visual state causally aligned with the simulated process.
+impeller and product-flow path animate only while PLC-101 reports the pump
+running. The CV-101 belt and drive animate only while PLC-101 reports the
+conveyor running. A progress gauge inside the active bottle follows PLC-101's
+measured bottle level. This keeps the visual state causally aligned with the
+simulated process.
 
 ### Player workstation (`player`)
 
@@ -98,7 +95,6 @@ is not stored in any player-reachable image or file.
 | Network | Address | Component | Externally published |
 |---|---:|---|---|
 | control | `172.30.10.11:502` | PLC-101 | No |
-| control | `172.30.10.12:502` | PLC-102 | No |
 | control | `172.30.10.13:502` | RIO-101 level gateway | No |
 | control | `172.30.10.20:1881` | FUXA HMI | Through edge port 8089 |
 | control | `172.30.10.50` | Player workstation | Through edge port 2224 |

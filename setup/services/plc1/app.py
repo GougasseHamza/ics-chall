@@ -1,4 +1,4 @@
-"""PLC-101: tank inlet and transfer-pump controller."""
+"""PLC-101: integrated tank, transfer-pump and conveyor controller."""
 
 from __future__ import annotations
 
@@ -35,14 +35,14 @@ class PLC101:
         data_bank = DataBank(
             coils_size=0,
             d_inputs_size=0,
-            h_regs_size=5,
-            i_regs_size=10,
+            h_regs_size=6,
+            i_regs_size=16,
         )
         device_id = DeviceIdentification(
             vendor_name=b"Rivermark Beverage Co.",
             product_code=b"PLC101",
             major_minor_revision=b"4.7",
-            product_name=b"Tank and Transfer Pump Controller",
+            product_name=b"Integrated Bottling Cell Controller",
             model_name=b"U-PLC 1200",
             user_application_name=b"Line 4 PLC-101",
         )
@@ -62,6 +62,7 @@ class PLC101:
         )
         self.inlet_output = True
         self.pump_output = False
+        self.conveyor_output = False
 
     def start(self) -> None:
         self.server.start()
@@ -73,6 +74,7 @@ class PLC101:
                 2500,
                 8500,
                 0,
+                int(Mode.AUTO),
             ],
         )
         LOG.info("Modbus/TCP server listening on port 502")
@@ -84,8 +86,12 @@ class PLC101:
                 LOG.exception("control scan failed; commanding safe outputs")
                 self.inlet_output = False
                 self.pump_output = False
+                self.conveyor_output = False
                 try:
-                    set_actuators("plc1", {"inlet_open": False, "pump_running": False})
+                    set_actuators(
+                        "plc1",
+                        {"inlet_open": False, "pump_running": False, "conveyor_running": False},
+                    )
                 except Exception:
                     pass
             remaining = self.SCAN_SECONDS - (time.monotonic() - started)
@@ -114,6 +120,7 @@ class PLC101:
         reported_tank_level = self._reported_tank_level()
         inlet_mode = self._mode(self._holding(PLC1Holding.INLET_MODE, int(Mode.AUTO)))
         pump_mode = self._mode(self._holding(PLC1Holding.PUMP_MODE, int(Mode.AUTO)))
+        conveyor_mode = self._mode(self._holding(PLC1Holding.CONVEYOR_MODE, int(Mode.AUTO)))
         low = self._holding(PLC1Holding.LOW_SETPOINT, 2500) / SCALE_PERCENT
         high = self._holding(PLC1Holding.HIGH_SETPOINT, 8500) / SCALE_PERCENT
 
@@ -159,9 +166,22 @@ class PLC101:
         if state["machine_state"] == int(MachineState.BROKEN):
             self.pump_output = False
 
+        if conveyor_mode == Mode.MANUAL_OFF:
+            self.conveyor_output = False
+        elif conveyor_mode == Mode.MANUAL_ON:
+            self.conveyor_output = True
+        elif conveyor_mode == Mode.AUTO:
+            self.conveyor_output = state["bottle_level"] >= 98.0
+        else:
+            self.conveyor_output = False
+
         updated = set_actuators(
             "plc1",
-            {"inlet_open": self.inlet_output, "pump_running": self.pump_output},
+            {
+                "inlet_open": self.inlet_output,
+                "pump_running": self.pump_output,
+                "conveyor_running": self.conveyor_output,
+            },
         )
         self.server.data_bank.set_input_registers(
             0,
@@ -176,6 +196,12 @@ class PLC101:
                 int(reported_tank_level <= 5.0),
                 int(updated["dry_run_alarm"]),
                 int(updated["machine_state"]),
+                clamp_register(updated["bottle_level"] * SCALE_PERCENT),
+                clamp_register(updated["bottle_position"] * SCALE_PERCENT),
+                int(updated["conveyor_running"]),
+                clamp_register(updated["good_bottles"]),
+                clamp_register(updated["rejected_bottles"]),
+                int(updated["spill_alarm"]),
             ],
         )
 
